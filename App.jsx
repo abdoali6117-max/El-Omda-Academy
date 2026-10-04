@@ -65,7 +65,7 @@ function App() {
               💻
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>أكاديمية الناشئين</h3>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>العمده اكاديمي</h3>
               <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>إدارة الطلاب والحسابات</p>
             </div>
           </div>
