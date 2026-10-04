@@ -9,9 +9,9 @@ function App() {
 
   // 1. قاعدة بيانات الطلاب
   const [students, setStudents] = useState([
-    { id: 101, name: 'أحمد محمد', level: 'المستوى الأول', parentPhone: '01012345678', paid: 1500, remaining: 0, attendanceCount: 12 },
-    { id: 102, name: 'سارة محمود', level: 'المستوى الثاني', parentPhone: '01123456789', paid: 1000, remaining: 500, attendanceCount: 8 },
-    { id: 103, name: 'عمر خالد', level: 'المستوى الثالث', parentPhone: '01234567890', paid: 1500, remaining: 0, attendanceCount: 15 }
+    { id: '101', name: 'أحمد محمد', level: 'المستوى الأول', parentPhone: '01012345678', paid: 1500, remaining: 0, attendanceCount: 12 },
+    { id: '102', name: 'سارة محمود', level: 'المستوى الثاني', parentPhone: '01123456789', paid: 1000, remaining: 500, attendanceCount: 8 },
+    { id: '103', name: 'عمر خالد', level: 'المستوى الثالث', parentPhone: '01234567890', paid: 1500, remaining: 0, attendanceCount: 15 }
   ])
 
   // 2. قاعدة بيانات المصروفات والإيرادات الإضافية
@@ -26,8 +26,8 @@ function App() {
   const [showAddStudentModal, setShowAddStudentModal] = useState(false)
   const [showTransactionModal, setShowTransactionModal] = useState(false)
 
-  // نماذج الإدخال
-  const [newStudent, setNewStudent] = useState({ name: '', level: 'المستوى الأول', parentPhone: '', paid: 1500, remaining: 0 })
+  // نماذج الإدخال مع حقل كود الطالب اليدوي
+  const [newStudent, setNewStudent] = useState({ id: '', name: '', level: 'المستوى الأول', parentPhone: '', paid: 1500, remaining: 0 })
   const [newTransaction, setNewTransaction] = useState({ type: 'expense', title: '', amount: '', date: new Date().toISOString().split('T')[0] })
 
   useEffect(() => {
@@ -42,12 +42,22 @@ function App() {
   const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + Number(t.amount || 0), 0)
   const netProfit = totalIncomes - totalExpenses
 
-  // إضافات جديدة
+  // إضافة طالب جديد بكود مخصص
   const handleAddStudent = (e) => {
     e.preventDefault()
-    if (!newStudent.name) return
-    const generatedId = 100 + students.length + 1
-    const createdStudent = { id: generatedId, ...newStudent, attendanceCount: 0 }
+    if (!newStudent.name || !newStudent.id) {
+      alert('يرجى كتابة اسم الطالب وكود الطالب!')
+      return
+    }
+
+    // التحقق من عدم تكرار الكود
+    const exists = students.some(s => String(s.id) === String(newStudent.id))
+    if (exists) {
+      alert('كود الطالب هذا مستخدم بالفعل، يرجى كتابة كود مختلف.')
+      return
+    }
+
+    const createdStudent = { ...newStudent, attendanceCount: 0 }
     setStudents([...students, createdStudent])
     
     // تسجيل إيراد تلقائي في حال دفع مبلغ
@@ -55,17 +65,17 @@ function App() {
       setTransactions([...transactions, {
         id: Date.now(),
         type: 'income',
-        title: `اشتراك جديد - ${newStudent.name}`,
+        title: `اشتراك جديد - ${newStudent.name} (كود: ${newStudent.id})`,
         amount: Number(newStudent.paid),
         date: new Date().toISOString().split('T')[0]
       }])
     }
 
-    setNewStudent({ name: '', level: 'المستوى الأول', parentPhone: '', paid: 1500, remaining: 0 })
+    setNewStudent({ id: '', name: '', level: 'المستوى الأول', parentPhone: '', paid: 1500, remaining: 0 })
     setShowAddStudentModal(false)
   }
 
-  // 🗑️️ دالة حذف الطالب
+  // 🗑 دالة حذف الطالب
   const handleDeleteStudent = (id, name) => {
     const confirmDelete = window.confirm(`هل أنت تأكد من رغبتك في حذف الطالب "${name}"؟`)
     if (confirmDelete) {
@@ -111,7 +121,7 @@ function App() {
     setTransactions([...transactions, {
       id: Date.now(),
       type: 'income',
-      title: `قسط سداد - ${student?.name}`,
+      title: `قسط سداد - ${student?.name} (كود: ${student?.id})`,
       amount: payAmt,
       date: new Date().toISOString().split('T')[0]
     }])
@@ -389,6 +399,7 @@ function App() {
           <div style={modalContentStyle}>
             <h3 style={{ margin: '0 0 20px 0' }}>إضافة طالب جديد</h3>
             <form onSubmit={handleAddStudent} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <input type="text" placeholder="كود الطالب (مثال: ST-105 أو 201)" required value={newStudent.id} onChange={e => setNewStudent({...newStudent, id: e.target.value})} style={inputStyle} />
               <input type="text" placeholder="اسم الطالب" required value={newStudent.name} onChange={e => setNewStudent({...newStudent, name: e.target.value})} style={inputStyle} />
               <input type="text" placeholder="رقم ولي الأمر" required value={newStudent.parentPhone} onChange={e => setNewStudent({...newStudent, parentPhone: e.target.value})} style={inputStyle} />
               <select value={newStudent.level} onChange={e => setNewStudent({...newStudent, level: e.target.value})} style={inputStyle}>
