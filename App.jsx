@@ -5,278 +5,357 @@ import Login from './Login'
 function App() {
   const [session, setSession] = useState(null)
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [selectedAttendanceLevel, setSelectedAttendanceLevel] = useState('المستوى الأول')
 
-  // بيانات الطلاب والحسابات القابلة للتحكم
+  // 1. قاعدة بيانات الطلاب
   const [students, setStudents] = useState([
-    { id: 1, name: 'احمد محمد', level: 'المستوى الأول', paid: 1500, remaining: 0, sessions: 10 },
-    { id: 2, name: 'سارة محمود', level: 'المستوى الثاني', paid: 1000, remaining: 500, sessions: 5 }
+    { id: 101, name: 'أحمد محمد', level: 'المستوى الأول', parentPhone: '01012345678', paid: 1500, remaining: 0, attendanceCount: 12 },
+    { id: 102, name: 'سارة محمود', level: 'المستوى الثاني', parentPhone: '01123456789', paid: 1000, remaining: 500, attendanceCount: 8 },
+    { id: 103, name: 'عمر خالد', level: 'المستوى الثالث', parentPhone: '01234567890', paid: 1500, remaining: 0, attendanceCount: 15 }
   ])
 
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [newStudent, setNewStudent] = useState({ name: '', level: 'المستوى الأول', paid: 1500, remaining: 0 })
+  // 2. قاعدة بيانات المصروفات والإيرادات الإضافية
+  const [transactions, setTransactions] = useState([
+    { id: 1, type: 'income', title: 'اشتراك المستوى الأول - أحمد محمد', amount: 1500, date: '2026-10-01' },
+    { id: 2, type: 'income', title: 'اشتراك المستوى الثاني - سارة محمود', amount: 1000, date: '2026-10-02' },
+    { id: 3, type: 'expense', title: 'إيجار المقر الشهري', amount: 800, date: '2026-10-03' },
+    { id: 4, type: 'expense', title: 'أدوات ومستلزمات تدريب', amount: 200, date: '2026-10-04' }
+  ])
+
+  // أشكال النافذة المنبثقة (Modals)
+  const [showAddStudentModal, setShowAddStudentModal] = useState(false)
+  const [showTransactionModal, setShowTransactionModal] = useState(false)
+
+  // نماذج الإدخال
+  const [newStudent, setNewStudent] = useState({ name: '', level: 'المستوى الأول', parentPhone: '', paid: 1500, remaining: 0 })
+  const [newTransaction, setNewTransaction] = useState({ type: 'expense', title: '', amount: '', date: new Date().toISOString().split('T')[0] })
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-    })
-
+    supabase.auth.getSession().then(({ data: { session } }) => setSession(session))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setSession(session))
     return () => subscription.unsubscribe()
   }, [])
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-  }
+  // الحسابات المباشرة
+  const totalStudents = students.length
+  const totalIncomes = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + Number(t.amount || 0), 0)
+  const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + Number(t.amount || 0), 0)
+  const netProfit = totalIncomes - totalExpenses
 
+  // إضافات جديدة
   const handleAddStudent = (e) => {
     e.preventDefault()
     if (!newStudent.name) return
-    setStudents([...students, { id: Date.now(), ...newStudent, sessions: 0 }])
-    setNewStudent({ name: '', level: 'المستوى الأول', paid: 1500, remaining: 0 })
-    setShowAddModal(false)
+    const generatedId = 100 + students.length + 1
+    const createdStudent = { id: generatedId, ...newStudent, attendanceCount: 0 }
+    setStudents([...students, createdStudent])
+    
+    // تسجيل إيراد تلقائي في حال دفع مبلغ
+    if (Number(newStudent.paid) > 0) {
+      setTransactions([...transactions, {
+        id: Date.now(),
+        type: 'income',
+        title: `اشتراك جديد - ${newStudent.name}`,
+        amount: Number(newStudent.paid),
+        date: new Date().toISOString().split('T')[0]
+      }])
+    }
+
+    setNewStudent({ name: '', level: 'المستوى الأول', parentPhone: '', paid: 1500, remaining: 0 })
+    setShowAddStudentModal(false)
   }
 
-  // حساب الحسابات ديناميكياً
-  const totalStudents = students.length
-  const totalPaid = students.reduce((acc, curr) => acc + Number(curr.paid || 0), 0)
-  const totalRemaining = students.reduce((acc, curr) => acc + Number(curr.remaining || 0), 0)
-  const avgAttendance = Math.round((students.reduce((acc, curr) => acc + Number(curr.sessions || 0), 0) / (totalStudents * 30 || 1)) * 100)
-
-  const countL1 = students.filter(s => s.level === 'المستوى الأول').length
-  const countL2 = students.filter(s => s.level === 'المستوى الثاني').length
-  const countL3 = students.filter(s => s.level === 'المستوى الثالث').length
-
-  if (!session) {
-    return <Login />
+  const handleAddTransaction = (e) => {
+    e.preventDefault()
+    if (!newTransaction.title || !newTransaction.amount) return
+    setTransactions([...transactions, { id: Date.now(), ...newTransaction, amount: Number(newTransaction.amount) }])
+    setNewTransaction({ type: 'expense', title: '', amount: '', date: new Date().toISOString().split('T')[0] })
+    setShowTransactionModal(false)
   }
+
+  // تسجيل الحضور والغياب
+  const handleAttendance = (studentId, type) => {
+    setStudents(students.map(s => {
+      if (s.id === studentId) {
+        return {
+          ...s,
+          attendanceCount: type === 'present' ? s.attendanceCount + 1 : Math.max(0, s.attendanceCount - 1)
+        }
+      }
+      return s
+    }))
+  }
+
+  // تسجيل قسط جديد
+  const handlePayInstallment = (studentId, amount) => {
+    const payAmt = Number(amount)
+    if (!payAmt) return
+    setStudents(students.map(s => {
+      if (s.id === studentId) {
+        const newPaid = Number(s.paid) + payAmt
+        const newRemaining = Math.max(0, Number(s.remaining) - payAmt)
+        return { ...s, paid: newPaid, remaining: newRemaining }
+      }
+      return s
+    }))
+
+    const student = students.find(s => s.id === studentId)
+    setTransactions([...transactions, {
+      id: Date.now(),
+      type: 'income',
+      title: `قسط سداد - ${student?.name}`,
+      amount: payAmt,
+      date: new Date().toISOString().split('T')[0]
+    }])
+  }
+
+  if (!session) return <Login />
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', direction: 'rtl', fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif', backgroundColor: '#f8fafc' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', direction: 'rtl', fontFamily: 'Segoe UI, Tahoma, sans-serif', backgroundColor: '#f8fafc' }}>
       
       {/* Sidebar - الشريط الجانبي */}
       <div style={{ width: '260px', backgroundColor: '#1e1e38', color: '#fff', padding: '24px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div>
-          {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px', padding: '0 8px' }}>
-            <div style={{ width: '40px', height: '40px', backgroundColor: '#6366f1', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>
-              💻
-            </div>
+            <div style={{ width: '40px', height: '40px', backgroundColor: '#6366f1', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>💻</div>
             <div>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>العمده اكاديمي</h3>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>أكاديمية الناشئين</h3>
               <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>إدارة الطلاب والحسابات</p>
             </div>
           </div>
 
-          {/* Navigation Items */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 16px', borderRadius: '10px', border: 'none',
-                backgroundColor: activeTab === 'dashboard' ? '#4f46e5' : 'transparent', color: '#fff', cursor: 'pointer', textAlign: 'right', fontSize: '14px', fontWeight: '500'
-              }}
-            >
-              <span>📊</span> لوحة التحكم الرئيسية
-            </button>
-
-            <button
-              onClick={() => setActiveTab('students')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 16px', borderRadius: '10px', border: 'none',
-                backgroundColor: activeTab === 'students' ? '#4f46e5' : 'transparent', color: activeTab === 'students' ? '#fff' : '#cbd5e1', cursor: 'pointer', textAlign: 'right', fontSize: '14px'
-              }}
-            >
-              <span>🎓</span> إدارة الطلاب
-            </button>
-
-            <button
-              onClick={() => setActiveTab('sessions')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 16px', borderRadius: '10px', border: 'none',
-                backgroundColor: activeTab === 'sessions' ? '#4f46e5' : 'transparent', color: activeTab === 'sessions' ? '#fff' : '#cbd5e1', cursor: 'pointer', textAlign: 'right', fontSize: '14px'
-              }}
-            >
-              <span>📅</span> متابعة الـ 30 حصة
-            </button>
-
-            <button
-              onClick={() => setActiveTab('finance')}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 16px', borderRadius: '10px', border: 'none',
-                backgroundColor: activeTab === 'finance' ? '#4f46e5' : 'transparent', color: activeTab === 'finance' ? '#fff' : '#cbd5e1', cursor: 'pointer', textAlign: 'right', fontSize: '14px'
-              }}
-            >
-              <span>💳</span> الأقساط والحسابات
-            </button>
+            <button onClick={() => setActiveTab('dashboard')} style={navBtnStyle(activeTab === 'dashboard')}>📊 لوحة التحكم الرئيسية</button>
+            <button onClick={() => setActiveTab('students')} style={navBtnStyle(activeTab === 'students')}>🎓 إدارة الطلاب</button>
+            <button onClick={() => setActiveTab('attendance')} style={navBtnStyle(activeTab === 'attendance')}>📅 الحضور والغياب</button>
+            <button onClick={() => setActiveTab('finance')} style={navBtnStyle(activeTab === 'finance')}>💳 الأقساط والحسابات</button>
+            <button onClick={() => setActiveTab('transactions')} style={navBtnStyle(activeTab === 'transactions')}>📝 الإيرادات والمصروفات</button>
           </div>
         </div>
 
-        {/* User Footer */}
-        <div style={{ borderTop: '1px solid #334155', pt: '16px', paddingTop: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 8px' }}>
+        <div style={{ borderTop: '1px solid #334155', paddingTop: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '13px', color: '#cbd5e1' }}>المسؤول (Admin)</span>
-            <button onClick={handleLogout} title="تسجيل الخروج" style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '16px' }}>🚪</button>
-          </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button style={{ flex: 1, padding: '6px', fontSize: '12px', backgroundColor: '#2d2d4f', color: '#94a3b8', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>📤 تصدير</button>
-            <button style={{ flex: 1, padding: '6px', fontSize: '12px', backgroundColor: '#2d2d4f', color: '#94a3b8', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>📥 استيراد</button>
+            <button onClick={() => supabase.auth.signOut()} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '16px' }}>🚪</button>
           </div>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div style={{ flex: 1, padding: '32px' }}>
+      <div style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>
         
         {/* Top Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
           <h1 style={{ margin: 0, fontSize: '22px', color: '#0f172a', fontWeight: 'bold' }}>
             {activeTab === 'dashboard' && 'لوحة التحكم الرئيسية'}
             {activeTab === 'students' && 'إدارة الطلاب'}
-            {activeTab === 'sessions' && 'متابعة الـ 30 حصة'}
-            {activeTab === 'finance' && 'الأقساط والحسابات'}
+            {activeTab === 'attendance' && 'تسجيل الحضور والغياب'}
+            {activeTab === 'finance' && 'كشف الأقساط والحسابات'}
+            {activeTab === 'transactions' && 'دفتر الإيرادات والمصروفات'}
           </h1>
 
-          <button 
-            onClick={() => setShowAddModal(true)}
-            style={{ backgroundColor: '#7c3aed', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}
-          >
-            <span>+</span> إضافة طالب جديد
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button onClick={() => setShowAddStudentModal(true)} style={primaryBtnStyle}>+ إضافة طالب جديد</button>
+            <button onClick={() => setShowTransactionModal(true)} style={secondaryBtnStyle}>+ إضافة إيراد / مصروف</button>
+          </div>
         </div>
 
-        {/* Dashboard Tab Content */}
+        {/* 1. Dashboard Tab */}
         {activeTab === 'dashboard' && (
-          <>
-            {/* KPI Cards Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
-              
-              {/* Card 1: Total Students */}
-              <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <div>
-                  <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>إجمالي الطلاب</p>
-                  <h2 style={{ margin: '8px 0 4px 0', fontSize: '24px', color: '#0f172a' }}>{totalStudents}</h2>
-                  <span style={{ fontSize: '11px', color: '#6366f1' }}>بالمراحل الثلاث</span>
-                </div>
-                <div style={{ width: '48px', height: '48px', backgroundColor: '#e0e7ff', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>👥</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+            <div style={cardStyle}>
+              <div>
+                <p style={cardTitleStyle}>إجمالي الطلاب</p>
+                <h2 style={cardValueStyle}>{totalStudents}</h2>
+                <span style={{ fontSize: '11px', color: '#6366f1' }}>طالب مسجل</span>
               </div>
-
-              {/* Card 2: Revenue */}
-              <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <div>
-                  <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>الإيرادات المحصلة</p>
-                  <h2 style={{ margin: '8px 0 4px 0', fontSize: '24px', color: '#0f172a' }}>{totalPaid.toLocaleString()} ج.م</h2>
-                  <span style={{ fontSize: '11px', color: '#10b981' }}>مدفوعات المستويات</span>
-                </div>
-                <div style={{ width: '48px', height: '48px', backgroundColor: '#d1fae5', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>💵</div>
-              </div>
-
-              {/* Card 3: Remaining */}
-              <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <div>
-                  <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>المبالغ المتبقية</p>
-                  <h2 style={{ margin: '8px 0 4px 0', fontSize: '24px', color: '#0f172a' }}>{totalRemaining.toLocaleString()} ج.م</h2>
-                  <span style={{ fontSize: '11px', color: '#f59e0b' }}>أقساط متاخرة</span>
-                </div>
-                <div style={{ width: '48px', height: '48px', backgroundColor: '#fef3c7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>⏳</div>
-              </div>
-
-              {/* Card 4: Attendance */}
-              <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <div>
-                  <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>نسبة الحضور والإنجاز</p>
-                  <h2 style={{ margin: '8px 0 4px 0', fontSize: '24px', color: '#0f172a' }}>{avgAttendance}%</h2>
-                  <span style={{ fontSize: '11px', color: '#6366f1' }}>معدل تنفيذ الـ 30 حصة</span>
-                </div>
-                <div style={{ width: '48px', height: '48px', backgroundColor: '#e0e7ff', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>📈</div>
-              </div>
-
+              <div style={iconBoxStyle('#e0e7ff')}>👥</div>
             </div>
 
-            {/* Bottom Section: Distribution & Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
-              
-              {/* Visual Distribution Chart */}
-              <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <h3 style={{ margin: '0 0 24px 0', fontSize: '16px', color: '#0f172a' }}>توزيع الطلاب حسب المستوى</h3>
-                <div style={{ height: '220px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
-                  
-                  {/* Bar Level 1 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
-                    <div style={{ width: '60px', height: `${Math.max(countL1 * 50, 10)}px`, backgroundColor: '#4f46e5', borderRadius: '8px 8px 0 0', transition: 'height 0.3s' }}></div>
-                    <span style={{ fontSize: '12px', color: '#64748b' }}>المستوى الأول</span>
-                  </div>
-
-                  {/* Bar Level 2 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
-                    <div style={{ width: '60px', height: `${Math.max(countL2 * 50, 10)}px`, backgroundColor: '#a855f7', borderRadius: '8px 8px 0 0', transition: 'height 0.3s' }}></div>
-                    <span style={{ fontSize: '12px', color: '#64748b' }}>المستوى الثاني</span>
-                  </div>
-
-                  {/* Bar Level 3 */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flex: 1 }}>
-                    <div style={{ width: '60px', height: `${Math.max(countL3 * 50, 10)}px`, backgroundColor: '#e2e8f0', borderRadius: '8px 8px 0 0', transition: 'height 0.3s' }}></div>
-                    <span style={{ fontSize: '12px', color: '#64748b' }}>المستوى الثالث</span>
-                  </div>
-
-                </div>
+            <div style={cardStyle}>
+              <div>
+                <p style={cardTitleStyle}>إجمالي الإيرادات</p>
+                <h2 style={cardValueStyle}>{totalIncomes.toLocaleString()} ج.م</h2>
+                <span style={{ fontSize: '11px', color: '#10b981' }}>إجمالي المقبوضات</span>
               </div>
-
-              {/* Levels Breakdown */}
-              <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <h3 style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#0f172a' }}>إحصاءات المستويات</h3>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: '#f8fafc', borderRadius: '10px' }}>
-                      <span style={{ fontSize: '14px', color: '#334155' }}>المستوى الأول</span>
-                      <span style={{ backgroundColor: '#e0e7ff', color: '#4338ca', padding: '4px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold' }}>{countL1} طالب</span>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: '#f8fafc', borderRadius: '10px' }}>
-                      <span style={{ fontSize: '14px', color: '#334155' }}>المستوى الثاني</span>
-                      <span style={{ backgroundColor: '#f3e8ff', color: '#6b21a8', padding: '4px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold' }}>{countL2} طالب</span>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: '#f8fafc', borderRadius: '10px' }}>
-                      <span style={{ fontSize: '14px', color: '#334155' }}>المستوى الثالث</span>
-                      <span style={{ backgroundColor: '#f1f5f9', color: '#d97706', padding: '4px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold' }}>{countL3} طالب</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: '20px', backgroundColor: '#eff6ff', padding: '12px', borderRadius: '10px', fontSize: '11px', color: '#1e40af', lineHeight: '1.5' }}>
-                  💡 الاشتراك الثابت للمستوى الواحد: <strong>1,500 جنيه</strong> بمعدل <strong>30 حصة</strong> (حصتين أسبوعياً).
-                </div>
-              </div>
-
+              <div style={iconBoxStyle('#d1fae5')}>💵</div>
             </div>
-          </>
+
+            <div style={cardStyle}>
+              <div>
+                <p style={cardTitleStyle}>إجمالي المصروفات</p>
+                <h2 style={cardValueStyle}>{totalExpenses.toLocaleString()} ج.م</h2>
+                <span style={{ fontSize: '11px', color: '#ef4444' }}>إجمالي المصاريف</span>
+              </div>
+              <div style={iconBoxStyle('#fee2e2')}>📉</div>
+            </div>
+
+            <div style={cardStyle}>
+              <div>
+                <p style={cardTitleStyle}>صافي الأرباح</p>
+                <h2 style={cardValueStyle}>{netProfit.toLocaleString()} ج.م</h2>
+                <span style={{ fontSize: '11px', color: netProfit >= 0 ? '#10b981' : '#ef4444' }}>
+                  {netProfit >= 0 ? 'مكسب صافي' : 'عجز'}
+                </span>
+              </div>
+              <div style={iconBoxStyle('#fef3c7')}>🏦</div>
+            </div>
+          </div>
         )}
 
-        {/* Tab: Manage Students */}
+        {/* 2. Students Tab */}
         {activeTab === 'students' && (
-          <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
+          <div style={tableContainerStyle}>
+            <table style={tableStyle}>
               <thead>
-                <tr style={{ borderBottom: '2px solid #f1f5f9', color: '#64748b', fontSize: '14px' }}>
-                  <th style={{ padding: '12px' }}>اسم الطالب</th>
-                  <th style={{ padding: '12px' }}>المستوى</th>
-                  <th style={{ padding: '12px' }}>المدفوع</th>
-                  <th style={{ padding: '12px' }}>المتبقي</th>
-                  <th style={{ padding: '12px' }}>الحصص المكتملة</th>
+                <tr style={tableHeaderStyle}>
+                  <th>الكود</th>
+                  <th>اسم الطالب</th>
+                  <th>المستوى</th>
+                  <th>رقم ولي الأمر</th>
+                  <th>المدفوع</th>
+                  <th>المتبقي</th>
+                  <th>الحضور</th>
                 </tr>
               </thead>
               <tbody>
                 {students.map(s => (
-                  <tr key={s.id} style={{ borderBottom: '1px solid #f8fafc', fontSize: '14px' }}>
+                  <tr key={s.id} style={{ borderBottom: '1px solid #f8fafc' }}>
+                    <td style={{ padding: '12px', fontWeight: 'bold', color: '#6366f1' }}>#{s.id}</td>
                     <td style={{ padding: '12px', fontWeight: '500' }}>{s.name}</td>
                     <td style={{ padding: '12px' }}>{s.level}</td>
-                    <td style={{ padding: '12px', color: '#10b981' }}>{s.paid} ج.م</td>
-                    <td style={{ padding: '12px', color: '#f59e0b' }}>{s.remaining} ج.م</td>
-                    <td style={{ padding: '12px' }}>{s.sessions} / 30</td>
+                    <td style={{ padding: '12px' }}>{s.parentPhone || 'غير مسجل'}</td>
+                    <td style={{ padding: '12px', color: '#10b981', fontWeight: 'bold' }}>{s.paid} ج.م</td>
+                    <td style={{ padding: '12px', color: '#f59e0b', fontWeight: 'bold' }}>{s.remaining} ج.م</td>
+                    <td style={{ padding: '12px' }}>{s.attendanceCount} / 30 حصة</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* 3. Attendance Tab */}
+        {activeTab === 'attendance' && (
+          <div>
+            {/* Level Selector */}
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+              {['المستوى الأول', 'المستوى الثاني', 'المستوى الثالث'].map(lvl => (
+                <button
+                  key={lvl}
+                  onClick={() => setSelectedAttendanceLevel(lvl)}
+                  style={{
+                    padding: '10px 20px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontWeight: 'bold',
+                    backgroundColor: selectedAttendanceLevel === lvl ? '#7c3aed' : '#fff',
+                    color: selectedAttendanceLevel === lvl ? '#fff' : '#64748b',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                  }}
+                >
+                  {lvl}
+                </button>
+              ))}
+            </div>
+
+            <div style={tableContainerStyle}>
+              <table style={tableStyle}>
+                <thead>
+                  <tr style={tableHeaderStyle}>
+                    <th>الكود</th>
+                    <th>اسم الطالب</th>
+                    <th>الحصص المسجلة</th>
+                    <th>تسجيل اليوم</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {students.filter(s => s.level === selectedAttendanceLevel).map(s => (
+                    <tr key={s.id} style={{ borderBottom: '1px solid #f8fafc' }}>
+                      <td style={{ padding: '12px', fontWeight: 'bold', color: '#6366f1' }}>#{s.id}</td>
+                      <td style={{ padding: '12px', fontWeight: '500' }}>{s.name}</td>
+                      <td style={{ padding: '12px' }}>{s.attendanceCount} حصة</td>
+                      <td style={{ padding: '12px', display: 'flex', gap: '8px' }}>
+                        <button onClick={() => handleAttendance(s.id, 'present')} style={{ backgroundColor: '#10b981', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer' }}>✔️ حضور</button>
+                        <button onClick={() => handleAttendance(s.id, 'absent')} style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer' }}>❌ غياب / خصم</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* 4. Installments & Accounts Tab */}
+        {activeTab === 'finance' && (
+          <div style={tableContainerStyle}>
+            <table style={tableStyle}>
+              <thead>
+                <tr style={tableHeaderStyle}>
+                  <th>كود الطالب</th>
+                  <th>اسم الطالب</th>
+                  <th>المبلغ المدفوع</th>
+                  <th>المبلغ المتبقي</th>
+                  <th>تحصيل قسط جديد</th>
+                </tr>
+              </thead>
+              <tbody>
+                {students.map(s => (
+                  <tr key={s.id} style={{ borderBottom: '1px solid #f8fafc' }}>
+                    <td style={{ padding: '12px', fontWeight: 'bold', color: '#6366f1' }}>#{s.id}</td>
+                    <td style={{ padding: '12px', fontWeight: '500' }}>{s.name}</td>
+                    <td style={{ padding: '12px', color: '#10b981', fontWeight: 'bold' }}>{s.paid} ج.م</td>
+                    <td style={{ padding: '12px', color: '#f59e0b', fontWeight: 'bold' }}>{s.remaining} ج.م</td>
+                    <td style={{ padding: '12px' }}>
+                      {s.remaining > 0 ? (
+                        <button
+                          onClick={() => {
+                            const amt = prompt(`أدخل المبلغ المحصل من الطالب ${s.name}:`, s.remaining)
+                            if (amt) handlePayInstallment(s.id, amt)
+                          }}
+                          style={{ backgroundColor: '#f59e0b', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' }}
+                        >
+                          💳 دفع قسط
+                        </button>
+                      ) : (
+                        <span style={{ color: '#10b981', fontSize: '12px', fontWeight: 'bold' }}>مسدد بالكامل ✔️</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* 5. Transactions Tab */}
+        {activeTab === 'transactions' && (
+          <div style={tableContainerStyle}>
+            <table style={tableStyle}>
+              <thead>
+                <tr style={tableHeaderStyle}>
+                  <th>النوع</th>
+                  <th>البيان / الوصف</th>
+                  <th>المبلغ</th>
+                  <th>التاريخ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.map(t => (
+                  <tr key={t.id} style={{ borderBottom: '1px solid #f8fafc' }}>
+                    <td style={{ padding: '12px' }}>
+                      <span style={{
+                        padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold',
+                        backgroundColor: t.type === 'income' ? '#d1fae5' : '#fee2e2',
+                        color: t.type === 'income' ? '#047857' : '#b91c1c'
+                      }}>
+                        {t.type === 'income' ? 'إيراد +' : 'مصروف -'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px', fontWeight: '500' }}>{t.title}</td>
+                    <td style={{ padding: '12px', fontWeight: 'bold', color: t.type === 'income' ? '#10b981' : '#ef4444' }}>
+                      {t.amount} ج.م
+                    </td>
+                    <td style={{ padding: '12px', color: '#64748b' }}>{t.date}</td>
                   </tr>
                 ))}
               </tbody>
@@ -286,58 +365,48 @@ function App() {
 
       </div>
 
-      {/* Add Student Modal */}
-      {showAddModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: '#fff', padding: '28px', borderRadius: '16px', width: '400px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ margin: '0 0 20px 0', fontSize: '18px' }}>إضافة طالب جديد</h3>
-            <form onSubmit={handleAddStudent} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ fontSize: '12px', color: '#64748b' }}>اسم الطالب</label>
-                <input 
-                  type="text" 
-                  required 
-                  value={newStudent.name} 
-                  onChange={e => setNewStudent({...newStudent, name: e.target.value})} 
-                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', marginTop: '4px' }} 
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: '12px', color: '#64748b' }}>المستوى</label>
-                <select 
-                  value={newStudent.level} 
-                  onChange={e => setNewStudent({...newStudent, level: e.target.value})}
-                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', marginTop: '4px' }}
-                >
-                  <option>المستوى الأول</option>
-                  <option>المستوى الثاني</option>
-                  <option>المستوى الثالث</option>
-                </select>
-              </div>
+      {/* Modal: Add Student */}
+      {showAddStudentModal && (
+        <div style={modalOverlayStyle}>
+          <div style={modalContentStyle}>
+            <h3 style={{ margin: '0 0 20px 0' }}>إضافة طالب جديد</h3>
+            <form onSubmit={handleAddStudent} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <input type="text" placeholder="اسم الطالب" required value={newStudent.name} onChange={e => setNewStudent({...newStudent, name: e.target.value})} style={inputStyle} />
+              <input type="text" placeholder="رقم ولي الأمر" required value={newStudent.parentPhone} onChange={e => setNewStudent({...newStudent, parentPhone: e.target.value})} style={inputStyle} />
+              <select value={newStudent.level} onChange={e => setNewStudent({...newStudent, level: e.target.value})} style={inputStyle}>
+                <option>المستوى الأول</option>
+                <option>المستوى الثاني</option>
+                <option>المستوى الثالث</option>
+              </select>
               <div style={{ display: 'flex', gap: '10px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '12px', color: '#64748b' }}>المبلغ المدفوع</label>
-                  <input 
-                    type="number" 
-                    value={newStudent.paid} 
-                    onChange={e => setNewStudent({...newStudent, paid: e.target.value})} 
-                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', marginTop: '4px' }} 
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '12px', color: '#64748b' }}>المبلغ المتبقي</label>
-                  <input 
-                    type="number" 
-                    value={newStudent.remaining} 
-                    onChange={e => setNewStudent({...newStudent, remaining: e.target.value})} 
-                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', marginTop: '4px' }} 
-                  />
-                </div>
+                <input type="number" placeholder="المدفوع" value={newStudent.paid} onChange={e => setNewStudent({...newStudent, paid: e.target.value})} style={inputStyle} />
+                <input type="number" placeholder="المتبقي" value={newStudent.remaining} onChange={e => setNewStudent({...newStudent, remaining: e.target.value})} style={inputStyle} />
               </div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button type="submit" style={primaryBtnStyle}>حفظ الطالب</button>
+                <button type="button" onClick={() => setShowAddStudentModal(false)} style={cancelBtnStyle}>إلغاء</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
-                <button type="submit" style={{ flex: 1, backgroundColor: '#7c3aed', color: '#fff', border: 'none', padding: '10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>حفظ الطالب</button>
-                <button type="button" onClick={() => setShowAddModal(false)} style={{ flex: 1, backgroundColor: '#f1f5f9', color: '#475569', border: 'none', padding: '10px', borderRadius: '8px', cursor: 'pointer' }}>إلغاء</button>
+      {/* Modal: Add Transaction */}
+      {showTransactionModal && (
+        <div style={modalOverlayStyle}>
+          <div style={modalContentStyle}>
+            <h3 style={{ margin: '0 0 20px 0' }}>تسجيل حركة مالية</h3>
+            <form onSubmit={handleAddTransaction} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <select value={newTransaction.type} onChange={e => setNewTransaction({...newTransaction, type: e.target.value})} style={inputStyle}>
+                <option value="expense">مصروف (-)</option>
+                <option value="income">إيراد (+)</option>
+              </select>
+              <input type="text" placeholder="البيان / الوصف (مثال: إيجار المقر)" required value={newTransaction.title} onChange={e => setNewTransaction({...newTransaction, title: e.target.value})} style={inputStyle} />
+              <input type="number" placeholder="المبلغ بالجنية" required value={newTransaction.amount} onChange={e => setNewTransaction({...newTransaction, amount: e.target.value})} style={inputStyle} />
+              <input type="date" value={newTransaction.date} onChange={e => setNewTransaction({...newTransaction, date: e.target.value})} style={inputStyle} />
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button type="submit" style={primaryBtnStyle}>تسجيل الحركة</button>
+                <button type="button" onClick={() => setShowTransactionModal(false)} style={cancelBtnStyle}>إلغاء</button>
               </div>
             </form>
           </div>
@@ -347,5 +416,24 @@ function App() {
     </div>
   )
 }
+
+// Styles
+const navBtnStyle = (active) => ({
+  display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 16px', borderRadius: '10px', border: 'none',
+  backgroundColor: active ? '#4f46e5' : 'transparent', color: '#fff', cursor: 'pointer', textAlign: 'right', fontSize: '14px', fontWeight: '500'
+})
+const primaryBtnStyle = { backgroundColor: '#7c3aed', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }
+const secondaryBtnStyle = { backgroundColor: '#059669', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }
+const cancelBtnStyle = { backgroundColor: '#f1f5f9', color: '#475569', border: 'none', padding: '10px 18px', borderRadius: '10px', cursor: 'pointer', flex: 1 }
+const cardStyle = { backgroundColor: '#fff', padding: '20px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }
+const cardTitleStyle = { margin: 0, fontSize: '12px', color: '#64748b' }
+const cardValueStyle = { margin: '8px 0 4px 0', fontSize: '22px', color: '#0f172a' }
+const iconBoxStyle = (bg) => ({ width: '48px', height: '48px', backgroundColor: bg, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' })
+const tableContainerStyle = { backgroundColor: '#fff', padding: '20px', borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }
+const tableStyle = { width: '100%', borderCollapse: 'collapse', textAlign: 'right' }
+const tableHeaderStyle = { borderBottom: '2px solid #f1f5f9', color: '#64748b', fontSize: '14px', paddingBottom: '12px' }
+const modalOverlayStyle = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }
+const modalContentStyle = { backgroundColor: '#fff', padding: '28px', borderRadius: '16px', width: '400px' }
+const inputStyle = { width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }
 
 export default App
