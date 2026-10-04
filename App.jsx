@@ -65,6 +65,14 @@ function App() {
     setShowAddStudentModal(false)
   }
 
+  // 🗑️️ دالة حذف الطالب
+  const handleDeleteStudent = (id, name) => {
+    const confirmDelete = window.confirm(`هل أنت تأكد من رغبتك في حذف الطالب "${name}"؟`)
+    if (confirmDelete) {
+      setStudents(students.filter(student => student.id !== id))
+    }
+  }
+
   const handleAddTransaction = (e) => {
     e.preventDefault()
     if (!newTransaction.title || !newTransaction.amount) return
@@ -217,6 +225,7 @@ function App() {
                   <th>المدفوع</th>
                   <th>المتبقي</th>
                   <th>الحضور</th>
+                  <th>إجراءات</th>
                 </tr>
               </thead>
               <tbody>
@@ -229,6 +238,15 @@ function App() {
                     <td style={{ padding: '12px', color: '#10b981', fontWeight: 'bold' }}>{s.paid} ج.م</td>
                     <td style={{ padding: '12px', color: '#f59e0b', fontWeight: 'bold' }}>{s.remaining} ج.م</td>
                     <td style={{ padding: '12px' }}>{s.attendanceCount} / 30 حصة</td>
+                    <td style={{ padding: '12px' }}>
+                      <button 
+                        onClick={() => handleDeleteStudent(s.id, s.name)} 
+                        title="حذف الطالب"
+                        style={{ backgroundColor: '#fee2e2', color: '#ef4444', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+                      >
+                        🗑️ حذف
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
