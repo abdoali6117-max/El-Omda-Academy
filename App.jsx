@@ -7,6 +7,9 @@ function App() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [selectedAttendanceLevel, setSelectedAttendanceLevel] = useState('المستوى الأول')
 
+  // حقل حالة البحث عن الطلاب
+  const [searchTerm, setSearchTerm] = useState('')
+
   // 1. قاعدة بيانات الطلاب
   const [students, setStudents] = useState([
     { id: '101', name: 'أحمد محمد', level: 'المستوى الأول', parentPhone: '01012345678', paid: 1500, remaining: 0, attendanceCount: 12 },
@@ -41,6 +44,16 @@ function App() {
   const totalIncomes = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + Number(t.amount || 0), 0)
   const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + Number(t.amount || 0), 0)
   const netProfit = totalIncomes - totalExpenses
+
+  // تصفية قائمة الطلاب بناءً على البحث
+  const filteredStudents = students.filter(student => {
+    const term = searchTerm.toLowerCase().trim()
+    return (
+      student.name.toLowerCase().includes(term) ||
+      String(student.id).toLowerCase().includes(term) ||
+      (student.parentPhone && student.parentPhone.includes(term))
+    )
+  })
 
   // إضافة طالب جديد بكود مخصص
   const handleAddStudent = (e) => {
@@ -224,43 +237,90 @@ function App() {
 
         {/* 2. Students Tab */}
         {activeTab === 'students' && (
-          <div style={tableContainerStyle}>
-            <table style={tableStyle}>
-              <thead>
-                <tr style={tableHeaderStyle}>
-                  <th>الكود</th>
-                  <th>اسم الطالب</th>
-                  <th>المستوى</th>
-                  <th>رقم ولي الأمر</th>
-                  <th>المدفوع</th>
-                  <th>المتبقي</th>
-                  <th>الحضور</th>
-                  <th>إجراءات</th>
-                </tr>
-              </thead>
-              <tbody>
-                {students.map(s => (
-                  <tr key={s.id} style={{ borderBottom: '1px solid #f8fafc' }}>
-                    <td style={{ padding: '12px', fontWeight: 'bold', color: '#6366f1' }}>#{s.id}</td>
-                    <td style={{ padding: '12px', fontWeight: '500' }}>{s.name}</td>
-                    <td style={{ padding: '12px' }}>{s.level}</td>
-                    <td style={{ padding: '12px' }}>{s.parentPhone || 'غير مسجل'}</td>
-                    <td style={{ padding: '12px', color: '#10b981', fontWeight: 'bold' }}>{s.paid} ج.م</td>
-                    <td style={{ padding: '12px', color: '#f59e0b', fontWeight: 'bold' }}>{s.remaining} ج.م</td>
-                    <td style={{ padding: '12px' }}>{s.attendanceCount} / 30 حصة</td>
-                    <td style={{ padding: '12px' }}>
-                      <button 
-                        onClick={() => handleDeleteStudent(s.id, s.name)} 
-                        title="حذف الطالب"
-                        style={{ backgroundColor: '#fee2e2', color: '#ef4444', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
-                      >
-                        🗑️ حذف
-                      </button>
-                    </td>
+          <div>
+            {/* حقل البحث */}
+            <div style={{ marginBottom: '20px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <input
+                type="text"
+                placeholder="🔍 ابحث باسم الطالب، كود الطالب، أو رقم الهاتف..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  width: '100%',
+                  maxWidth: '400px',
+                  padding: '12px 16px',
+                  borderRadius: '10px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '14px',
+                  outline: 'none',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: '#e2e8f0',
+                    color: '#475569',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  إلغاء البحث
+                </button>
+              )}
+            </div>
+
+            <div style={tableContainerStyle}>
+              <table style={tableStyle}>
+                <thead>
+                  <tr style={tableHeaderStyle}>
+                    <th>الكود</th>
+                    <th>اسم الطالب</th>
+                    <th>المستوى</th>
+                    <th>رقم ولي الأمر</th>
+                    <th>المدفوع</th>
+                    <th>المتبقي</th>
+                    <th>الحضور</th>
+                    <th>إجراءات</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredStudents.length > 0 ? (
+                    filteredStudents.map(s => (
+                      <tr key={s.id} style={{ borderBottom: '1px solid #f8fafc' }}>
+                        <td style={{ padding: '12px', fontWeight: 'bold', color: '#6366f1' }}>#{s.id}</td>
+                        <td style={{ padding: '12px', fontWeight: '500' }}>{s.name}</td>
+                        <td style={{ padding: '12px' }}>{s.level}</td>
+                        <td style={{ padding: '12px' }}>{s.parentPhone || 'غير مسجل'}</td>
+                        <td style={{ padding: '12px', color: '#10b981', fontWeight: 'bold' }}>{s.paid} ج.م</td>
+                        <td style={{ padding: '12px', color: '#f59e0b', fontWeight: 'bold' }}>{s.remaining} ج.م</td>
+                        <td style={{ padding: '12px' }}>{s.attendanceCount} / 30 حصة</td>
+                        <td style={{ padding: '12px' }}>
+                          <button 
+                            onClick={() => handleDeleteStudent(s.id, s.name)} 
+                            title="حذف الطالب"
+                            style={{ backgroundColor: '#fee2e2', color: '#ef4444', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+                          >
+                            🗑️ حذف
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="8" style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
+                        لا توجد نتائج مطابقة لـ "{searchTerm}"
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
