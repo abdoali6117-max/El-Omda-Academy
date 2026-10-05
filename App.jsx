@@ -119,78 +119,64 @@ function App() {
   if (!session) return <Login />
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', direction: 'rtl', fontFamily: 'system-ui, -apple-system, sans-serif', backgroundColor: '#0f172a', color: '#f8fafc' }}>
+    <div style={{ minHeight: '100vh', direction: 'rtl', fontFamily: 'system-ui, -apple-system, sans-serif', backgroundColor: '#0f172a', color: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
       
-      {/* Sidebar المفتوح والمحدد بتصميم أنيق داكن */}
-      <aside style={{ width: '260px', backgroundColor: '#1e293b', borderLeft: '1px solid #334155', padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '36px' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>⚡</div>
-            <div>
-              <h2 style={{ margin: 0, fontSize: '16px', color: '#fff' }}>أكاديمية العمدة</h2>
-              <span style={{ fontSize: '11px', color: '#818cf8', fontWeight: 'bold' }}>الإصدار المطور v2.0</span>
-            </div>
+      {/* 1. Top Horizontal Navigation Bar - الشريط العلوي الأفقي */}
+      <header style={{ backgroundColor: '#1e293b', borderBottom: '1px solid #334155', padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', sticky: 'top', top: 0, zIndex: 100 }}>
+        
+        {/* Brand Logo & Name */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>⚡</div>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '16px', color: '#fff', fontWeight: 'bold' }}>أكاديمية العمدة</h2>
+            <span style={{ fontSize: '10px', color: '#818cf8', fontWeight: '600' }}>v2.0</span>
           </div>
-
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {[
-              { id: 'dashboard', icon: '📊', name: 'لوحة القيادة' },
-              { id: 'students', icon: '👨‍🎓', name: 'إدارة الطلاب' },
-              { id: 'attendance', icon: '📅', name: 'دفتر الحضور' },
-              { id: 'finance', icon: '💳', name: 'المستحقات الأقساط' },
-              { id: 'transactions', icon: '📑', name: 'السجل المالي' }
-            ].map(item => (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 16px', borderRadius: '12px', border: 'none',
-                  backgroundColor: activeTab === item.id ? '#6366f1' : 'transparent',
-                  color: activeTab === item.id ? '#fff' : '#94a3b8',
-                  cursor: 'pointer', textAlign: 'right', fontWeight: 'bold', fontSize: '14px', transition: 'all 0.2s'
-                }}
-              >
-                <span>{item.icon}</span>
-                <span>{item.name}</span>
-              </button>
-            ))}
-          </nav>
         </div>
 
-        <button onClick={() => supabase.auth.signOut()} style={{ backgroundColor: '#334155', color: '#f87171', border: 'none', padding: '10px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>
-          🚪 خروج
-        </button>
-      </aside>
+        {/* Horizontal Navigation Buttons */}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
+          {[
+            { id: 'dashboard', icon: '📊', name: 'لوحة القيادة' },
+            { id: 'students', icon: '👨‍🎓', name: 'إدارة الطلاب' },
+            { id: 'attendance', icon: '📅', name: 'دفتر الحضور' },
+            { id: 'finance', icon: '💳', name: 'الأقساط' },
+            { id: 'transactions', icon: '📑', name: 'السجل المالي' }
+          ].map(item => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '10px', border: 'none',
+                backgroundColor: activeTab === item.id ? '#6366f1' : 'transparent',
+                color: activeTab === item.id ? '#fff' : '#94a3b8',
+                cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', whitespace: 'nowrap', transition: 'all 0.2s'
+              }}
+            >
+              <span>{item.icon}</span>
+              <span>{item.name}</span>
+            </button>
+          ))}
+        </nav>
 
-      {/* المحتوى الرئيسي */}
+        {/* Action Buttons & Logout */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button onClick={() => setShowAddStudentModal(true)} style={{ backgroundColor: '#6366f1', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}>+ طالب جديد</button>
+          <button onClick={() => setShowTransactionModal(true)} style={{ backgroundColor: '#10b981', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}>+ قيد مالية</button>
+          <button onClick={() => supabase.auth.signOut()} title="خروج" style={{ backgroundColor: '#334155', color: '#f87171', border: 'none', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}>🚪 خروج</button>
+        </div>
+      </header>
+
+      {/* Main Content Viewport */}
       <main style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>
-        
-        {/* Header العلوي */}
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', backgroundColor: '#1e293b', padding: '20px 28px', borderRadius: '16px', border: '1px solid #334155' }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '22px', color: '#fff' }}>
-              {activeTab === 'dashboard' && '📊 لوحة القيادة الشاملة'}
-              {activeTab === 'students' && '👨‍🎓 كروت وبطاقات الطلاب'}
-              {activeTab === 'attendance' && '📅 تسجيل الحضور اليومي'}
-              {activeTab === 'finance' && '💳 تحصيل الأقساط'}
-              {activeTab === 'transactions' && '📑 الخزينة والمصروفات'}
-            </h1>
-          </div>
-
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button onClick={() => setShowAddStudentModal(true)} style={{ backgroundColor: '#6366f1', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>+ طالب جديد</button>
-            <button onClick={() => setShowTransactionModal(true)} style={{ backgroundColor: '#10b981', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold' }}>+ قيد مالية</button>
-          </div>
-        </header>
 
         {/* 1. Dashboard View */}
         {activeTab === 'dashboard' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
             {[
-              { title: 'إجمالي الطلاب', val: `${totalStudents} طالب`, color: '#6366f1', bg: '#312e81' },
-              { title: 'الإيرادات', val: `${totalIncomes.toLocaleString()} ج.م`, color: '#34d399', bg: '#064e3b' },
-              { title: 'المصروفات', val: `${totalExpenses.toLocaleString()} ج.م`, color: '#f87171', bg: '#7f1d1d' },
-              { title: 'صافي الأرباح', val: `${netProfit.toLocaleString()} ج.م`, color: '#fbbf24', bg: '#78350f' }
+              { title: 'إجمالي الطلاب', val: `${totalStudents} طالب`, color: '#6366f1' },
+              { title: 'الإيرادات', val: `${totalIncomes.toLocaleString()} ج.م`, color: '#34d399' },
+              { title: 'المصروفات', val: `${totalExpenses.toLocaleString()} ج.م`, color: '#f87171' },
+              { title: 'صافي الأرباح', val: `${netProfit.toLocaleString()} ج.م`, color: '#fbbf24' }
             ].map((card, i) => (
               <div key={i} style={{ backgroundColor: '#1e293b', padding: '24px', borderRadius: '16px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <span style={{ fontSize: '13px', color: '#94a3b8' }}>{card.title}</span>
@@ -200,7 +186,7 @@ function App() {
           </div>
         )}
 
-        {/* 2. Students Cards View */}
+        {/* 2. Students View */}
         {activeTab === 'students' && (
           <div>
             <input
