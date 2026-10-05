@@ -490,4 +490,22 @@ const navBtnStyle = (active) => ({
 })
 const primaryBtnStyle = { background: '#4f46e5', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', fontWeight: '600' }
 const secondaryBtnStyle = { background: '#10b981', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', fontWeight: '600' }
-const cancelBtnStyle
+const cancelBtnStyle = { backgroundColor: '#f1f5f9', color: '#64748b', border: 'none', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', flex: 1 }
+const deleteBtnStyle = { backgroundColor: '#fee2e2', color: '#dc2626', border: 'none', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }
+const actionBtnStyle = (bg) => ({ backgroundColor: bg, color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' })
+const cardStyle = { backgroundColor: '#fff', padding: '24px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }
+const cardTitleStyle = { margin: 0, fontSize: '13px', color: '#64748b' }
+const cardValueStyle = { margin: '8px 0', fontSize: '24px', color: '#0f172a', fontWeight: '800' }
+const iconBoxStyle = (bg) => ({ width: '52px', height: '52px', backgroundColor: bg, borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' })
+const badgeStyle = (bg, text) => ({ padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', backgroundColor: bg, color: text })
+const tableContainerStyle = { backgroundColor: '#fff', padding: '12px', borderRadius: '16px', overflow: 'hidden' }
+const tableStyle = { width: '100%', borderCollapse: 'collapse', textAlign: 'right' }
+const tableHeaderStyle = { backgroundColor: '#f8fafc', color: '#64748b', fontSize: '13px' }
+const tableRowStyle = { borderBottom: '1px solid #f1f5f9' }
+const searchInputStyle = { width: '100%', maxWidth: '400px', padding: '12px 18px', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }
+const clearSearchBtnStyle = { padding: '10px 16px', borderRadius: '10px', border: 'none', backgroundColor: '#e2e8f0', color: '#475569', cursor: 'pointer', fontSize: '13px' }
+const modalOverlayStyle = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }
+const modalContentStyle = { backgroundColor: '#fff', padding: '32px', borderRadius: '20px', width: '420px' }
+const inputStyle = { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', boxSizing: 'border-box', fontSize: '14px' }
+
+export default App
