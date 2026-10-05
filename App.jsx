@@ -92,6 +92,13 @@ function App() {
     setShowTransactionModal(false)
   }
 
+  // دالة حذف الحركة المالية (إيراد أو مصروف)
+  const handleDeleteTransaction = (id, title) => {
+    if (window.confirm(`هل أنت تأكد من حذف الحركة المالية "${title}"؟`)) {
+      setTransactions(transactions.filter(t => t.id !== id))
+    }
+  }
+
   const handleAttendance = (studentId, type) => {
     setStudents(students.map(s => s.id === studentId ? { ...s, attendanceCount: type === 'present' ? s.attendanceCount + 1 : Math.max(0, s.attendanceCount - 1) } : s))
   }
@@ -121,8 +128,8 @@ function App() {
   return (
     <div style={{ minHeight: '100vh', direction: 'rtl', fontFamily: 'system-ui, -apple-system, sans-serif', backgroundColor: '#0f172a', color: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
       
-      {/* 1. Top Horizontal Navigation Bar - الشريط العلوي الأفقي */}
-      <header style={{ backgroundColor: '#1e293b', borderBottom: '1px solid #334155', padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', sticky: 'top', top: 0, zIndex: 100 }}>
+      {/* 1. Top Horizontal Navigation Bar */}
+      <header style={{ backgroundColor: '#1e293b', borderBottom: '1px solid #334155', padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', position: 'sticky', top: 0, zIndex: 100 }}>
         
         {/* Brand Logo & Name */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -149,7 +156,7 @@ function App() {
                 display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', borderRadius: '10px', border: 'none',
                 backgroundColor: activeTab === item.id ? '#6366f1' : 'transparent',
                 color: activeTab === item.id ? '#fff' : '#94a3b8',
-                cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', whitespace: 'nowrap', transition: 'all 0.2s'
+                cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', whiteSpace: 'nowrap', transition: 'all 0.2s'
               }}
             >
               <span>{item.icon}</span>
@@ -301,7 +308,7 @@ function App() {
           </div>
         )}
 
-        {/* 5. Transactions View */}
+        {/* 5. Transactions View (تم إضافة عمود الحذف كود الإيراد أو المصروف) */}
         {activeTab === 'transactions' && (
           <div style={{ backgroundColor: '#1e293b', borderRadius: '16px', padding: '20px', border: '1px solid #334155' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
@@ -311,6 +318,7 @@ function App() {
                   <th style={{ padding: '12px' }}>الوصف</th>
                   <th style={{ padding: '12px' }}>المبلغ</th>
                   <th style={{ padding: '12px' }}>التاريخ</th>
+                  <th style={{ padding: '12px' }}>الإجراء</th>
                 </tr>
               </thead>
               <tbody>
@@ -324,6 +332,14 @@ function App() {
                     <td style={{ padding: '12px', color: '#fff' }}>{t.title}</td>
                     <td style={{ padding: '12px', fontWeight: 'bold', color: t.type === 'income' ? '#34d399' : '#f87171' }}>{t.amount} ج.م</td>
                     <td style={{ padding: '12px', color: '#94a3b8', fontSize: '12px' }}>{t.date}</td>
+                    <td style={{ padding: '12px' }}>
+                      <button
+                        onClick={() => handleDeleteTransaction(t.id, t.title)}
+                        style={{ backgroundColor: '#7f1d1d', color: '#f87171', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+                      >
+                        🗑️ حذف
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
