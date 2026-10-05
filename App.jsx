@@ -6,18 +6,16 @@ function App() {
   const [session, setSession] = useState(null)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [selectedAttendanceLevel, setSelectedAttendanceLevel] = useState('المستوى الأول')
-
-  // حقل حالة البحث عن الطلاب
   const [searchTerm, setSearchTerm] = useState('')
 
-  // 1. قاعدة بيانات الطلاب
+  // 1. بيانات الطلاب
   const [students, setStudents] = useState([
     { id: '101', name: 'أحمد محمد', level: 'المستوى الأول', parentPhone: '01012345678', paid: 1500, remaining: 0, attendanceCount: 12 },
     { id: '102', name: 'سارة محمود', level: 'المستوى الثاني', parentPhone: '01123456789', paid: 1000, remaining: 500, attendanceCount: 8 },
     { id: '103', name: 'عمر خالد', level: 'المستوى الثالث', parentPhone: '01234567890', paid: 1500, remaining: 0, attendanceCount: 15 }
   ])
 
-  // 2. قاعدة بيانات المصروفات والإيرادات الإضافية
+  // 2. بيانات المعاملات المالية
   const [transactions, setTransactions] = useState([
     { id: 1, type: 'income', title: 'اشتراك المستوى الأول - أحمد محمد', amount: 1500, date: '2026-10-01' },
     { id: 2, type: 'income', title: 'اشتراك المستوى الثاني - سارة محمود', amount: 1000, date: '2026-10-02' },
@@ -25,11 +23,9 @@ function App() {
     { id: 4, type: 'expense', title: 'أدوات ومستلزمات تدريب', amount: 200, date: '2026-10-04' }
   ])
 
-  // أشكال النافذة المنبثقة (Modals)
   const [showAddStudentModal, setShowAddStudentModal] = useState(false)
   const [showTransactionModal, setShowTransactionModal] = useState(false)
 
-  // نماذج الإدخال مع حقل كود الطالب اليدوي
   const [newStudent, setNewStudent] = useState({ id: '', name: '', level: 'المستوى الأول', parentPhone: '', paid: 1500, remaining: 0 })
   const [newTransaction, setNewTransaction] = useState({ type: 'expense', title: '', amount: '', date: new Date().toISOString().split('T')[0] })
 
@@ -39,13 +35,11 @@ function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // الحسابات المباشرة
   const totalStudents = students.length
   const totalIncomes = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + Number(t.amount || 0), 0)
   const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + Number(t.amount || 0), 0)
   const netProfit = totalIncomes - totalExpenses
 
-  // تصفية قائمة الطلاب بناءً على البحث
   const filteredStudents = students.filter(student => {
     const term = searchTerm.toLowerCase().trim()
     return (
@@ -55,7 +49,6 @@ function App() {
     )
   })
 
-  // إضافة طالب جديد بكود مخصص
   const handleAddStudent = (e) => {
     e.preventDefault()
     if (!newStudent.name || !newStudent.id) {
@@ -65,18 +58,17 @@ function App() {
 
     const exists = students.some(s => String(s.id) === String(newStudent.id))
     if (exists) {
-      alert('كود الطالب هذا مستخدم بالفعل، يرجى كتابة كود مختلف.')
+      alert('كود الطالب هذا مستخدم بالفعل!')
       return
     }
 
-    const createdStudent = { ...newStudent, attendanceCount: 0 }
-    setStudents([...students, createdStudent])
+    setStudents([...students, { ...newStudent, attendanceCount: 0 }])
     
     if (Number(newStudent.paid) > 0) {
       setTransactions([...transactions, {
         id: Date.now(),
         type: 'income',
-        title: `اشتراك جديد - ${newStudent.name} (كود: ${newStudent.id})`,
+        title: `اشتراك جديد - ${newStudent.name} (#${newStudent.id})`,
         amount: Number(newStudent.paid),
         date: new Date().toISOString().split('T')[0]
       }])
@@ -86,10 +78,8 @@ function App() {
     setShowAddStudentModal(false)
   }
 
-  // حذف الطالب
   const handleDeleteStudent = (id, name) => {
-    const confirmDelete = window.confirm(`هل أنت تأكد من رغبتك في حذف الطالب "${name}"؟`)
-    if (confirmDelete) {
+    if (window.confirm(`تأكيد حذف الطالب "${name}"؟`)) {
       setStudents(students.filter(student => student.id !== id))
     }
   }
@@ -102,28 +92,16 @@ function App() {
     setShowTransactionModal(false)
   }
 
-  // تسجيل الحضور والغياب
   const handleAttendance = (studentId, type) => {
-    setStudents(students.map(s => {
-      if (s.id === studentId) {
-        return {
-          ...s,
-          attendanceCount: type === 'present' ? s.attendanceCount + 1 : Math.max(0, s.attendanceCount - 1)
-        }
-      }
-      return s
-    }))
+    setStudents(students.map(s => s.id === studentId ? { ...s, attendanceCount: type === 'present' ? s.attendanceCount + 1 : Math.max(0, s.attendanceCount - 1) } : s))
   }
 
-  // تسجيل قسط جديد
   const handlePayInstallment = (studentId, amount) => {
     const payAmt = Number(amount)
     if (!payAmt) return
     setStudents(students.map(s => {
       if (s.id === studentId) {
-        const newPaid = Number(s.paid) + payAmt
-        const newRemaining = Math.max(0, Number(s.remaining) - payAmt)
-        return { ...s, paid: newPaid, remaining: newRemaining }
+        return { ...s, paid: Number(s.paid) + payAmt, remaining: Math.max(0, Number(s.remaining) - payAmt) }
       }
       return s
     }))
@@ -132,7 +110,7 @@ function App() {
     setTransactions([...transactions, {
       id: Date.now(),
       type: 'income',
-      title: `قسط سداد - ${student?.name} (كود: ${student?.id})`,
+      title: `قسط - ${student?.name} (#${student?.id})`,
       amount: payAmt,
       date: new Date().toISOString().split('T')[0]
     }])
@@ -141,184 +119,151 @@ function App() {
   if (!session) return <Login />
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', direction: 'rtl', fontFamily: "'Segoe UI', Tahoma, sans-serif", backgroundColor: '#f1f5f9' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', direction: 'rtl', fontFamily: 'system-ui, -apple-system, sans-serif', backgroundColor: '#f3f4f6' }}>
       
-      {/* Sidebar - الشريط الجانبي */}
-      <aside style={{ width: '270px', backgroundColor: '#0f172a', color: '#f8fafc', padding: '28px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '4px 0 24px rgba(0,0,0,0.05)' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '40px', padding: '0 8px' }}>
-            <div style={{ width: '42px', height: '42px', background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>⚡</div>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: '#fff' }}>أكاديمية الناشئين</h3>
-              <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#64748b' }}>نظام الإدارة المتكامل</p>
-            </div>
+      {/* 1. New Compact Sidebar with Hover Style */}
+      <aside style={{ width: '90px', backgroundColor: '#111827', color: '#fff', padding: '24px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', width: '100%' }}>
+          <div style={{ width: '48px', height: '48px', backgroundColor: '#6366f1', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', boxShadow: '0 10px 15px -3px rgba(99, 102, 241, 0.4)' }}>
+            🎓
           </div>
 
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <button onClick={() => setActiveTab('dashboard')} style={navBtnStyle(activeTab === 'dashboard')}>
-              📊 لوحة التحكم
-            </button>
-            <button onClick={() => setActiveTab('students')} style={navBtnStyle(activeTab === 'students')}>
-              🎓 إدارة الطلاب
-            </button>
-            <button onClick={() => setActiveTab('attendance')} style={navBtnStyle(activeTab === 'attendance')}>
-              📅 الحضور والغياب
-            </button>
-            <button onClick={() => setActiveTab('finance')} style={navBtnStyle(activeTab === 'finance')}>
-              💳 الأقساط والحسابات
-            </button>
-            <button onClick={() => setActiveTab('transactions')} style={navBtnStyle(activeTab === 'transactions')}>
-              📝 السجل المالي
-            </button>
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+            {[
+              { id: 'dashboard', icon: '📊', name: 'الرئيسية' },
+              { id: 'students', icon: '👨‍🎓', name: 'الطلاب' },
+              { id: 'attendance', icon: '📅', name: 'الحضور' },
+              { id: 'finance', icon: '💳', name: 'الأقساط' },
+              { id: 'transactions', icon: '📑', name: 'الخزينة' }
+            ].map(item => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                title={item.name}
+                style={{
+                  width: '100%', height: '56px', borderRadius: '14px', border: 'none', cursor: 'pointer',
+                  backgroundColor: activeTab === item.id ? '#312e81' : 'transparent',
+                  color: activeTab === item.id ? '#818cf8' : '#9ca3af',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <span style={{ fontSize: '20px' }}>{item.icon}</span>
+                <span style={{ fontSize: '10px', fontWeight: 'bold' }}>{item.name}</span>
+              </button>
+            ))}
           </nav>
         </div>
 
-        <div style={{ borderTop: '1px solid #1e293b', paddingTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '13px', color: '#cbd5e1' }}>المسؤول (Admin)</span>
-          <button onClick={() => supabase.auth.signOut()} style={{ background: '#1e293b', border: 'none', color: '#f87171', padding: '8px 10px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}>🚪</button>
-        </div>
+        <button onClick={() => supabase.auth.signOut()} title="تسجيل الخروج" style={{ width: '48px', height: '48px', borderRadius: '14px', border: 'none', backgroundColor: '#374151', color: '#f87171', cursor: 'pointer', fontSize: '18px' }}>
+          🚪
+        </button>
       </aside>
 
-      {/* Main Content Area */}
-      <main style={{ flex: 1, padding: '36px 40px', overflowY: 'auto' }}>
+      {/* Main Content Viewport */}
+      <main style={{ flex: 1, padding: '28px 36px', overflowY: 'auto' }}>
         
-        {/* Top Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+        {/* Top Floating Navbar with Integrated Search */}
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: '16px 28px', borderRadius: '20px', marginBottom: '28px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: '24px', color: '#0f172a', fontWeight: '800' }}>
-              {activeTab === 'dashboard' && 'لوحة التحكم الرئيسية'}
-              {activeTab === 'students' && 'إدارة الطلاب'}
-              {activeTab === 'attendance' && 'تسجيل الحضور والغياب'}
-              {activeTab === 'finance' && 'كشف الأقساط والحسابات'}
-              {activeTab === 'transactions' && 'دفتر الإيرادات والمصروفات'}
+            <h1 style={{ margin: 0, fontSize: '20px', fontWeight: '800', color: '#111827' }}>
+              {activeTab === 'dashboard' && 'لوحة القيادة المباشرة'}
+              {activeTab === 'students' && 'دليل وإدارة الطلاب'}
+              {activeTab === 'attendance' && 'دفتر الحضور اليومي'}
+              {activeTab === 'finance' && 'متابعة المستحقات والأقساط'}
+              {activeTab === 'transactions' && 'السجل المالي والحركات'}
             </h1>
+            <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#6b7280' }}>أكاديمية الناشئين - النظام الذكي</p>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button onClick={() => setShowAddStudentModal(true)} style={primaryBtnStyle}>+ إضافة طالب</button>
-            <button onClick={() => setShowTransactionModal(true)} style={secondaryBtnStyle}>+ حركة مالية</button>
-          </div>
-        </div>
-
-        {/* 1. Dashboard Tab */}
-        {activeTab === 'dashboard' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
-            <div style={cardStyle}>
-              <div>
-                <p style={cardTitleStyle}>إجمالي الطلاب</p>
-                <h2 style={cardValueStyle}>{totalStudents}</h2>
-                <span style={badgeStyle('#e0e7ff', '#4338ca')}>طالب مسجل</span>
-              </div>
-              <div style={iconBoxStyle('#e0e7ff')}>👥</div>
-            </div>
-
-            <div style={cardStyle}>
-              <div>
-                <p style={cardTitleStyle}>إجمالي الإيرادات</p>
-                <h2 style={cardValueStyle}>{totalIncomes.toLocaleString()} ج.م</h2>
-                <span style={badgeStyle('#d1fae5', '#047857')}>المقبوضات</span>
-              </div>
-              <div style={iconBoxStyle('#d1fae5')}>💵</div>
-            </div>
-
-            <div style={cardStyle}>
-              <div>
-                <p style={cardTitleStyle}>إجمالي المصروفات</p>
-                <h2 style={cardValueStyle}>{totalExpenses.toLocaleString()} ج.م</h2>
-                <span style={badgeStyle('#fee2e2', '#b91c1c')}>المصاريف</span>
-              </div>
-              <div style={iconBoxStyle('#fee2e2')}>📉</div>
-            </div>
-
-            <div style={cardStyle}>
-              <div>
-                <p style={cardTitleStyle}>صافي الأرباح</p>
-                <h2 style={cardValueStyle}>{netProfit.toLocaleString()} ج.م</h2>
-                <span style={badgeStyle(netProfit >= 0 ? '#d1fae5' : '#fee2e2', netProfit >= 0 ? '#047857' : '#b91c1c')}>
-                  {netProfit >= 0 ? 'صافي أرباح' : 'عجز'}
-                </span>
-              </div>
-              <div style={iconBoxStyle('#fef3c7')}>🏦</div>
-            </div>
-          </div>
-        )}
-
-        {/* 2. Students Tab */}
-        {activeTab === 'students' && (
-          <div>
-            <div style={{ marginBottom: '24px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {/* Integrated Search Input in Top Nav */}
+          {activeTab === 'students' && (
+            <div style={{ flex: '0 1 360px', position: 'relative' }}>
               <input
                 type="text"
-                placeholder="ابحث باسم الطالب، الكود، أو الهاتف..."
+                placeholder="🔍 ابحث بالاسم، الكود، الهاتف..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={searchInputStyle}
+                style={{ width: '100%', padding: '10px 16px', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontSize: '13px', backgroundColor: '#f9fafb' }}
               />
-              {searchTerm && (
-                <button onClick={() => setSearchTerm('')} style={clearSearchBtnStyle}>
-                  إلغاء البحث
-                </button>
-              )}
             </div>
+          )}
 
-            <div style={tableContainerStyle}>
-              <table style={tableStyle}>
-                <thead>
-                  <tr style={tableHeaderStyle}>
-                    <th style={{ padding: '16px' }}>كود الطالب</th>
-                    <th style={{ padding: '16px' }}>الاسم</th>
-                    <th style={{ padding: '16px' }}>المستوى</th>
-                    <th style={{ padding: '16px' }}>رقم ولي الأمر</th>
-                    <th style={{ padding: '16px' }}>المدفوع</th>
-                    <th style={{ padding: '16px' }}>المتبقي</th>
-                    <th style={{ padding: '16px' }}>الحضور</th>
-                    <th style={{ padding: '16px' }}>الإجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredStudents.length > 0 ? (
-                    filteredStudents.map(s => (
-                      <tr key={s.id} style={tableRowStyle}>
-                        <td style={{ padding: '16px', fontWeight: '700', color: '#4f46e5' }}>#{s.id}</td>
-                        <td style={{ padding: '16px', fontWeight: '600', color: '#1e293b' }}>{s.name}</td>
-                        <td style={{ padding: '16px' }}>
-                          <span style={badgeStyle('#f1f5f9', '#475569')}>{s.level}</span>
-                        </td>
-                        <td style={{ padding: '16px', color: '#64748b' }}>{s.parentPhone || 'غير مسجل'}</td>
-                        <td style={{ padding: '16px', color: '#059669', fontWeight: '700' }}>{s.paid} ج.م</td>
-                        <td style={{ padding: '16px', color: '#d97706', fontWeight: '700' }}>{s.remaining} ج.م</td>
-                        <td style={{ padding: '16px', fontWeight: '600' }}>{s.attendanceCount} / 30 حصة</td>
-                        <td style={{ padding: '16px' }}>
-                          <button onClick={() => handleDeleteStudent(s.id, s.name)} style={deleteBtnStyle}>🗑️ حذف</button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="8" style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
-                        لا توجد نتائج مطابقة لـ "{searchTerm}"
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button onClick={() => setShowAddStudentModal(true)} style={{ backgroundColor: '#4f46e5', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)' }}>
+              + طالب جديد
+            </button>
+            <button onClick={() => setShowTransactionModal(true)} style={{ backgroundColor: '#10b981', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}>
+              + قيد مالية
+            </button>
+          </div>
+        </header>
+
+        {/* 1. Dashboard View with Circular Indicators */}
+        {activeTab === 'dashboard' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+              {[
+                { title: 'إجمالي الطلاب', val: `${totalStudents} طالب`, color: '#6366f1', icon: '👨‍🎓' },
+                { title: 'الإيرادات العامة', val: `${totalIncomes.toLocaleString()} ج.م`, color: '#10b981', icon: '💰' },
+                { title: 'المصروفات', val: `${totalExpenses.toLocaleString()} ج.م`, color: '#ef4444', icon: '💸' },
+                { title: 'صافي الأرباح', val: `${netProfit.toLocaleString()} ج.م`, color: '#f59e0b', icon: '🏦' }
+              ].map((c, i) => (
+                <div key={i} style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '20px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.03)', borderTop: `4px solid ${c.color}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '13px', color: '#6b7280', fontWeight: '600' }}>{c.title}</span>
+                    <span style={{ fontSize: '20px' }}>{c.icon}</span>
+                  </div>
+                  <h3 style={{ margin: '14px 0 0 0', fontSize: '22px', fontWeight: '800', color: '#111827' }}>{c.val}</h3>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        {/* 3. Attendance Tab */}
+        {/* 2. Students View - Card Grid Layout Instead of Traditional Table */}
+        {activeTab === 'students' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+            {filteredStudents.length > 0 ? (
+              filteredStudents.map(s => (
+                <div key={s.id} style={{ backgroundColor: '#fff', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid #f3f4f6' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <span style={{ backgroundColor: '#e0e7ff', color: '#4338ca', padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>#{s.id}</span>
+                      <button onClick={() => handleDeleteStudent(s.id, s.name)} style={{ backgroundColor: '#fee2e2', color: '#ef4444', border: 'none', padding: '4px 8px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>🗑️ حذف</button>
+                    </div>
+                    <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#111827' }}>{s.name}</h3>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#6b7280' }}>{s.level}</p>
+                    <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#4b5563' }}>📱 ولي الأمر: {s.parentPhone || 'غير مسجل'}</p>
+                  </div>
+
+                  <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '12px', marginTop: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                    <div>
+                      <span style={{ color: '#10b981', fontWeight: 'bold' }}>مدفوع: {s.paid}ج</span> / <span style={{ color: '#ef4444', fontWeight: 'bold' }}>متبقي: {s.remaining}ج</span>
+                    </div>
+                    <span style={{ backgroundColor: '#f3f4f6', padding: '4px 8px', borderRadius: '6px', fontWeight: '600' }}>{s.attendanceCount}/30 حصة</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: '#9ca3af' }}>لا توجد نتائج مطابقة</div>
+            )}
+          </div>
+        )}
+
+        {/* 3. Attendance View - Clean Level Selector Tabs */}
         {activeTab === 'attendance' && (
           <div>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
               {['المستوى الأول', 'المستوى الثاني', 'المستوى الثالث'].map(lvl => (
                 <button
                   key={lvl}
                   onClick={() => setSelectedAttendanceLevel(lvl)}
                   style={{
-                    padding: '10px 20px', borderRadius: '10px', border: '1px solid transparent', cursor: 'pointer', fontWeight: '600',
-                    backgroundColor: selectedAttendanceLevel === lvl ? '#4f46e5' : '#fff',
-                    color: selectedAttendanceLevel === lvl ? '#fff' : '#64748b',
-                    borderColor: selectedAttendanceLevel === lvl ? '#4f46e5' : '#e2e8f0'
+                    padding: '10px 24px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px',
+                    backgroundColor: selectedAttendanceLevel === lvl ? '#111827' : '#fff',
+                    color: selectedAttendanceLevel === lvl ? '#fff' : '#6b7280',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.03)'
                   }}
                 >
                   {lvl}
@@ -326,186 +271,7 @@ function App() {
               ))}
             </div>
 
-            <div style={tableContainerStyle}>
-              <table style={tableStyle}>
+            <div style={{ backgroundColor: '#fff', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.03)' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
                 <thead>
-                  <tr style={tableHeaderStyle}>
-                    <th style={{ padding: '16px' }}>الكود</th>
-                    <th style={{ padding: '16px' }}>اسم الطالب</th>
-                    <th style={{ padding: '16px' }}>إجمالي الحضور</th>
-                    <th style={{ padding: '16px' }}>تسجيل اليوم</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {students.filter(s => s.level === selectedAttendanceLevel).map(s => (
-                    <tr key={s.id} style={tableRowStyle}>
-                      <td style={{ padding: '16px', fontWeight: '700', color: '#4f46e5' }}>#{s.id}</td>
-                      <td style={{ padding: '16px', fontWeight: '600' }}>{s.name}</td>
-                      <td style={{ padding: '16px', fontWeight: '600' }}>{s.attendanceCount} حصة</td>
-                      <td style={{ padding: '16px', display: 'flex', gap: '8px' }}>
-                        <button onClick={() => handleAttendance(s.id, 'present')} style={actionBtnStyle('#10b981')}>✔️ حضور</button>
-                        <button onClick={() => handleAttendance(s.id, 'absent')} style={actionBtnStyle('#ef4444')}>❌ غياب / خصم</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* 4. Installments & Accounts Tab */}
-        {activeTab === 'finance' && (
-          <div style={tableContainerStyle}>
-            <table style={tableStyle}>
-              <thead>
-                <tr style={tableHeaderStyle}>
-                  <th style={{ padding: '16px' }}>الكود</th>
-                  <th style={{ padding: '16px' }}>اسم الطالب</th>
-                  <th style={{ padding: '16px' }}>المدفوع</th>
-                  <th style={{ padding: '16px' }}>المتبقي</th>
-                  <th style={{ padding: '16px' }}>تحصيل قسط</th>
-                </tr>
-              </thead>
-              <tbody>
-                {students.map(s => (
-                  <tr key={s.id} style={tableRowStyle}>
-                    <td style={{ padding: '16px', fontWeight: '700', color: '#4f46e5' }}>#{s.id}</td>
-                    <td style={{ padding: '16px', fontWeight: '600' }}>{s.name}</td>
-                    <td style={{ padding: '16px', color: '#059669', fontWeight: '700' }}>{s.paid} ج.م</td>
-                    <td style={{ padding: '16px', color: '#d97706', fontWeight: '700' }}>{s.remaining} ج.م</td>
-                    <td style={{ padding: '16px' }}>
-                      {s.remaining > 0 ? (
-                        <button
-                          onClick={() => {
-                            const amt = prompt(`أدخل المبلغ المحصل من الطالب ${s.name}:`, s.remaining)
-                            if (amt) handlePayInstallment(s.id, amt)
-                          }}
-                          style={actionBtnStyle('#f59e0b')}
-                        >
-                          💳 دفع قسط
-                        </button>
-                      ) : (
-                        <span style={badgeStyle('#d1fae5', '#047857')}>مسدد بالكامل ✔️</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* 5. Transactions Tab */}
-        {activeTab === 'transactions' && (
-          <div style={tableContainerStyle}>
-            <table style={tableStyle}>
-              <thead>
-                <tr style={tableHeaderStyle}>
-                  <th style={{ padding: '16px' }}>النوع</th>
-                  <th style={{ padding: '16px' }}>البيان / الوصف</th>
-                  <th style={{ padding: '16px' }}>المبلغ</th>
-                  <th style={{ padding: '16px' }}>التاريخ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.map(t => (
-                  <tr key={t.id} style={tableRowStyle}>
-                    <td style={{ padding: '16px' }}>
-                      <span style={badgeStyle(t.type === 'income' ? '#d1fae5' : '#fee2e2', t.type === 'income' ? '#047857' : '#b91c1c')}>
-                        {t.type === 'income' ? 'إيراد +' : 'مصروف -'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '16px', fontWeight: '600' }}>{t.title}</td>
-                    <td style={{ padding: '16px', fontWeight: '700', color: t.type === 'income' ? '#059669' : '#dc2626' }}>
-                      {t.amount} ج.م
-                    </td>
-                    <td style={{ padding: '16px', color: '#64748b' }}>{t.date}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-      </main>
-
-      {/* Modal: Add Student */}
-      {showAddStudentModal && (
-        <div style={modalOverlayStyle}>
-          <div style={modalContentStyle}>
-            <h3 style={{ margin: '0 0 20px 0' }}>إضافة طالب جديد</h3>
-            <form onSubmit={handleAddStudent} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <input type="text" placeholder="كود الطالب (مثال: ST-105)" required value={newStudent.id} onChange={e => setNewStudent({...newStudent, id: e.target.value})} style={inputStyle} />
-              <input type="text" placeholder="اسم الطالب" required value={newStudent.name} onChange={e => setNewStudent({...newStudent, name: e.target.value})} style={inputStyle} />
-              <input type="text" placeholder="رقم ولي الأمر" required value={newStudent.parentPhone} onChange={e => setNewStudent({...newStudent, parentPhone: e.target.value})} style={inputStyle} />
-              <select value={newStudent.level} onChange={e => setNewStudent({...newStudent, level: e.target.value})} style={inputStyle}>
-                <option>المستوى الأول</option>
-                <option>المستوى الثاني</option>
-                <option>المستوى الثالث</option>
-              </select>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <input type="number" placeholder="المدفوع" value={newStudent.paid} onChange={e => setNewStudent({...newStudent, paid: e.target.value})} style={inputStyle} />
-                <input type="number" placeholder="المتبقي" value={newStudent.remaining} onChange={e => setNewStudent({...newStudent, remaining: e.target.value})} style={inputStyle} />
-              </div>
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                <button type="submit" style={primaryBtnStyle}>حفظ الطالب</button>
-                <button type="button" onClick={() => setShowAddStudentModal(false)} style={cancelBtnStyle}>إلغاء</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal: Add Transaction */}
-      {showTransactionModal && (
-        <div style={modalOverlayStyle}>
-          <div style={modalContentStyle}>
-            <h3 style={{ margin: '0 0 20px 0' }}>تسجيل حركة مالية</h3>
-            <form onSubmit={handleAddTransaction} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <select value={newTransaction.type} onChange={e => setNewTransaction({...newTransaction, type: e.target.value})} style={inputStyle}>
-                <option value="expense">مصروف (-)</option>
-                <option value="income">إيراد (+)</option>
-              </select>
-              <input type="text" placeholder="البيان / الوصف" required value={newTransaction.title} onChange={e => setNewTransaction({...newTransaction, title: e.target.value})} style={inputStyle} />
-              <input type="number" placeholder="المبلغ بالجنية" required value={newTransaction.amount} onChange={e => setNewTransaction({...newTransaction, amount: e.target.value})} style={inputStyle} />
-              <input type="date" value={newTransaction.date} onChange={e => setNewTransaction({...newTransaction, date: e.target.value})} style={inputStyle} />
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                <button type="submit" style={primaryBtnStyle}>تسجيل الحركة</button>
-                <button type="button" onClick={() => setShowTransactionModal(false)} style={cancelBtnStyle}>إلغاء</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-    </div>
-  )
-}
-
-// Styles
-const navBtnStyle = (active) => ({
-  display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '12px 16px', borderRadius: '12px', border: 'none',
-  backgroundColor: active ? '#4f46e5' : 'transparent', color: active ? '#fff' : '#94a3b8', cursor: 'pointer', textAlign: 'right', fontSize: '14px', fontWeight: '600'
-})
-const primaryBtnStyle = { background: '#4f46e5', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', fontWeight: '600' }
-const secondaryBtnStyle = { background: '#10b981', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', fontWeight: '600' }
-const cancelBtnStyle = { backgroundColor: '#f1f5f9', color: '#64748b', border: 'none', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', flex: 1 }
-const deleteBtnStyle = { backgroundColor: '#fee2e2', color: '#dc2626', border: 'none', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }
-const actionBtnStyle = (bg) => ({ backgroundColor: bg, color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' })
-const cardStyle = { backgroundColor: '#fff', padding: '24px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }
-const cardTitleStyle = { margin: 0, fontSize: '13px', color: '#64748b' }
-const cardValueStyle = { margin: '8px 0', fontSize: '24px', color: '#0f172a', fontWeight: '800' }
-const iconBoxStyle = (bg) => ({ width: '52px', height: '52px', backgroundColor: bg, borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' })
-const badgeStyle = (bg, text) => ({ padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', backgroundColor: bg, color: text })
-const tableContainerStyle = { backgroundColor: '#fff', padding: '12px', borderRadius: '16px', overflow: 'hidden' }
-const tableStyle = { width: '100%', borderCollapse: 'collapse', textAlign: 'right' }
-const tableHeaderStyle = { backgroundColor: '#f8fafc', color: '#64748b', fontSize: '13px' }
-const tableRowStyle = { borderBottom: '1px solid #f1f5f9' }
-const searchInputStyle = { width: '100%', maxWidth: '400px', padding: '12px 18px', borderRadius: '12px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }
-const clearSearchBtnStyle = { padding: '10px 16px', borderRadius: '10px', border: 'none', backgroundColor: '#e2e8f0', color: '#475569', cursor: 'pointer', fontSize: '13px' }
-const modalOverlayStyle = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }
-const modalContentStyle = { backgroundColor: '#fff', padding: '32px', borderRadius: '20px', width: '420px' }
-const inputStyle = { width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', boxSizing: 'border-box', fontSize: '14px' }
-
-export default App
+                  <tr style={{ borderBottom: '2px solid #f3f4f6', color: '#9ca3af',
