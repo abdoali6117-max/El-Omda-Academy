@@ -170,32 +170,4 @@ function App() {
               <span style={{ fontSize: '18px' }}>💳</span> الأقساط والحسابات
             </button>
             <button onClick={() => setActiveTab('transactions')} style={navBtnStyle(activeTab === 'transactions')}>
-              <span style={{ fontSize: '18px' }}>📝</span> السجل المالي
-            </button>
-          </nav>
-        </div>
-
-        {/* Footer Admin Profile */}
-        <div style={{ borderTop: '1px solid #1e293b', paddingTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px' }}>A</div>
-            <div>
-              <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: '#f1f5f9' }}>المسؤول</p>
-              <p style={{ margin: 0, fontSize: '11px', color: '#64748b' }}>مدير النظام</p>
-            </div>
-          </div>
-          <button onClick={() => supabase.auth.signOut()} style={{ background: '#1e293b', border: 'none', color: '#f87171', padding: '8px 10px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', transition: '0.2s' }} title="تسجيل الخروج">
-            🚪
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content Area */}
-      <main style={{ flex: 1, padding: '36px 40px', overflowY: 'auto' }}>
-        
-        {/* Top Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '24px', color: '#0f172a', fontWeight: '800', letterSpacing: '-0.5px' }}>
-              {activeTab === 'dashboard' && 'لوحة التحكم الرئيسية'}
-              {activeTab === 'students' && 'إ
+              <span style={{ fontSize: '
