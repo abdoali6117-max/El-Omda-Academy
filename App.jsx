@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
 import Login from './Login'
 
-// مصفوفة لتوليد 250 طالب عشوائي تلقائياً
+// توليد 250 طالب عشوائي
 const generateRandomStudents = () => {
   const firstNames = ['أحمد', 'محمود', 'علي', 'عمر', 'حسين', 'إبراهيم', 'مصطفى', 'يوسف', 'خالد', 'حسن', 'سارة', 'مريم', 'نور', 'فاطمة', 'آية', 'زينب', 'رنا', 'منى', 'ياسمين', 'هدى']
   const familyNames = ['السيد', 'عبدالله', 'محمد', 'العمدة', 'الشريف', 'حسن', 'إبراهيم', 'عثمان', 'جمال', 'كمال', 'فاروق', 'توفيق', 'صالح', 'رضا', 'فهمي']
@@ -15,7 +15,6 @@ const generateRandomStudents = () => {
     const level = levels[Math.floor(Math.random() * levels.length)]
     const parentPhone = `01${Math.floor(Math.random() * 3)}${Math.floor(10000000 + Math.random() * 90000000)}`
     
-    // حسابات مالية وحضور عشوائية
     const isPaidFull = Math.random() > 0.4
     const paid = isPaidFull ? 1500 : Math.floor(Math.random() * 3) * 500
     const remaining = 1500 - paid
@@ -32,15 +31,13 @@ function App() {
   const [selectedAttendanceLevel, setSelectedAttendanceLevel] = useState('المستوى الأول')
   const [searchTerm, setSearchTerm] = useState('')
 
-  // 1. قاعدة بيانات الـ 250 طالب
   const [students, setStudents] = useState(generateRandomStudents())
 
-  // 2. بيانات المعاملات المالية
   const [transactions, setTransactions] = useState([
     { id: 1, type: 'income', title: 'اشتراك المستوى الأول - دفعة أكتوبر', amount: 45000, date: '2026-10-01' },
     { id: 2, type: 'income', title: 'تحصيل أقساط متبقية', amount: 15500, date: '2026-10-02' },
     { id: 3, type: 'expense', title: 'إيجار المقر الشهري', amount: 5000, date: '2026-10-03' },
-    { id: 4, type: 'expense', title: 'أدوات ومستلزمات تدريب وتربيه رياضية', amount: 3200, date: '2026-10-04' }
+    { id: 4, type: 'expense', title: 'أدوات ومستلزمات تدريب', amount: 3200, date: '2026-10-04' }
   ])
 
   const [showAddStudentModal, setShowAddStudentModal] = useState(false)
@@ -55,7 +52,6 @@ function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // الحسابات والتجميع الإجمالي لـ 250 طالب
   const totalStudents = students.length
   const totalStudentPayments = students.reduce((acc, s) => acc + Number(s.paid || 0), 0)
   const totalIncomes = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + Number(t.amount || 0), 0) + totalStudentPayments
@@ -152,7 +148,6 @@ function App() {
       {/* 1. Top Horizontal Navigation Bar */}
       <header style={{ backgroundColor: '#1e293b', borderBottom: '1px solid #334155', padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', position: 'sticky', top: 0, zIndex: 100 }}>
         
-        {/* Brand Logo & Name */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>⚡</div>
           <div>
@@ -161,7 +156,6 @@ function App() {
           </div>
         </div>
 
-        {/* Horizontal Navigation Buttons */}
         <nav style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
           {[
             { id: 'dashboard', icon: '📊', name: 'لوحة القيادة' },
@@ -186,7 +180,6 @@ function App() {
           ))}
         </nav>
 
-        {/* Action Buttons & Logout */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button onClick={() => setShowAddStudentModal(true)} style={{ backgroundColor: '#6366f1', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}>+ طالب جديد</button>
           <button onClick={() => setShowTransactionModal(true)} style={{ backgroundColor: '#10b981', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px' }}>+ قيد مالية</button>
@@ -194,10 +187,9 @@ function App() {
         </div>
       </header>
 
-      {/* Main Content Viewport */}
+      {/* Main Content */}
       <main style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>
 
-        {/* 1. Dashboard View */}
         {activeTab === 'dashboard' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
             {[
@@ -214,5 +206,212 @@ function App() {
           </div>
         )}
 
-        {/* 2. Students View */}
-        {activeTab === 'students
+        {activeTab === 'students' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+              <input
+                type="text"
+                placeholder="🔍 ابحث بين 250 طالب بالاسم، الكود، أو رقم الهاتف..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ width: '100%', maxWidth: '450px', padding: '12px 18px', borderRadius: '12px', border: '1px solid #334155', backgroundColor: '#1e293b', color: '#fff', outline: 'none' }}
+              />
+              <span style={{ fontSize: '13px', color: '#818cf8', fontWeight: 'bold' }}>معروض {filteredStudents.length} من أصل {students.length} طالب</span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+              {filteredStudents.map(s => (
+                <div key={s.id} style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '16px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ backgroundColor: '#312e81', color: '#818cf8', padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>#{s.id}</span>
+                      <button onClick={() => handleDeleteStudent(s.id, s.name)} style={{ backgroundColor: '#7f1d1d', color: '#f87171', border: 'none', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>حذف</button>
+                    </div>
+                    <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', color: '#fff' }}>{s.name}</h3>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>{s.level}</p>
+                    <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#cbd5e1' }}>📱 ولي الأمر: {s.parentPhone || 'غير مسجل'}</p>
+                  </div>
+
+                  <div style={{ borderTop: '1px solid #334155', paddingTop: '12px', marginTop: '16px', display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                    <span style={{ color: '#34d399', fontWeight: 'bold' }}>مدفوع: {s.paid}ج</span>
+                    <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>متبقي: {s.remaining}ج</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'attendance' && (
+          <div>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+              {['المستوى الأول', 'المستوى الثاني', 'المستوى الثالث'].map(lvl => (
+                <button
+                  key={lvl}
+                  onClick={() => setSelectedAttendanceLevel(lvl)}
+                  style={{
+                    padding: '10px 20px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontWeight: 'bold',
+                    backgroundColor: selectedAttendanceLevel === lvl ? '#6366f1' : '#1e293b',
+                    color: selectedAttendanceLevel === lvl ? '#fff' : '#94a3b8'
+                  }}
+                >
+                  {lvl} ({students.filter(s => s.level === lvl).length})
+                </button>
+              ))}
+            </div>
+
+            <div style={{ backgroundColor: '#1e293b', borderRadius: '16px', padding: '20px', border: '1px solid #334155' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #334155', color: '#94a3b8', fontSize: '13px' }}>
+                    <th style={{ padding: '12px' }}>الكود</th>
+                    <th style={{ padding: '12px' }}>الاسم</th>
+                    <th style={{ padding: '12px' }}>الحصص</th>
+                    <th style={{ padding: '12px' }}>تسجيل الحضور</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {students.filter(s => s.level === selectedAttendanceLevel).map(s => (
+                    <tr key={s.id} style={{ borderBottom: '1px solid #334155' }}>
+                      <td style={{ padding: '12px', color: '#818cf8', fontWeight: 'bold' }}>#{s.id}</td>
+                      <td style={{ padding: '12px', color: '#fff' }}>{s.name}</td>
+                      <td style={{ padding: '12px' }}>{s.attendanceCount} حصة</td>
+                      <td style={{ padding: '12px', display: 'flex', gap: '8px' }}>
+                        <button onClick={() => handleAttendance(s.id, 'present')} style={{ backgroundColor: '#059669', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' }}>حضور +</button>
+                        <button onClick={() => handleAttendance(s.id, 'absent')} style={{ backgroundColor: '#dc2626', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' }}>خصم -</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'finance' && (
+          <div style={{ backgroundColor: '#1e293b', borderRadius: '16px', padding: '20px', border: '1px solid #334155' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #334155', color: '#94a3b8', fontSize: '13px' }}>
+                  <th style={{ padding: '12px' }}>الكود</th>
+                  <th style={{ padding: '12px' }}>الاسم</th>
+                  <th style={{ padding: '12px' }}>المدفوع</th>
+                  <th style={{ padding: '12px' }}>المتبقي</th>
+                  <th style={{ padding: '12px' }}>تحصيل قسط</th>
+                </tr>
+              </thead>
+              <tbody>
+                {students.map(s => (
+                  <tr key={s.id} style={{ borderBottom: '1px solid #334155' }}>
+                    <td style={{ padding: '12px', color: '#818cf8', fontWeight: 'bold' }}>#{s.id}</td>
+                    <td style={{ padding: '12px', color: '#fff' }}>{s.name}</td>
+                    <td style={{ padding: '12px', color: '#34d399', fontWeight: 'bold' }}>{s.paid} ج.م</td>
+                    <td style={{ padding: '12px', color: '#fbbf24', fontWeight: 'bold' }}>{s.remaining} ج.م</td>
+                    <td style={{ padding: '12px' }}>
+                      {s.remaining > 0 ? (
+                        <button onClick={() => { const amt = prompt(`قسط ${s.name}:`, s.remaining); if (amt) handlePayInstallment(s.id, amt) }} style={{ backgroundColor: '#d97706', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' }}>💳 دفع قسط</button>
+                      ) : (
+                        <span style={{ color: '#34d399', fontSize: '12px' }}>مكتمل ✔️</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {activeTab === 'transactions' && (
+          <div style={{ backgroundColor: '#1e293b', borderRadius: '16px', padding: '20px', border: '1px solid #334155' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #334155', color: '#94a3b8', fontSize: '13px' }}>
+                  <th style={{ padding: '12px' }}>الحركة</th>
+                  <th style={{ padding: '12px' }}>الوصف</th>
+                  <th style={{ padding: '12px' }}>المبلغ</th>
+                  <th style={{ padding: '12px' }}>التاريخ</th>
+                  <th style={{ padding: '12px' }}>الإجراء</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.map(t => (
+                  <tr key={t.id} style={{ borderBottom: '1px solid #334155' }}>
+                    <td style={{ padding: '12px' }}>
+                      <span style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', backgroundColor: t.type === 'income' ? '#064e3b' : '#7f1d1d', color: t.type === 'income' ? '#34d399' : '#f87171' }}>
+                        {t.type === 'income' ? 'إيراد +' : 'مصروف -'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px', color: '#fff' }}>{t.title}</td>
+                    <td style={{ padding: '12px', fontWeight: 'bold', color: t.type === 'income' ? '#34d399' : '#f87171' }}>{t.amount} ج.م</td>
+                    <td style={{ padding: '12px', color: '#94a3b8', fontSize: '12px' }}>{t.date}</td>
+                    <td style={{ padding: '12px' }}>
+                      <button
+                        onClick={() => handleDeleteTransaction(t.id, t.title)}
+                        style={{ backgroundColor: '#7f1d1d', color: '#f87171', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+                      >
+                        🗑️ حذف
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+      </main>
+
+      {/* Modal: Add Student */}
+      {showAddStudentModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#1e293b', padding: '28px', borderRadius: '20px', width: '380px', border: '1px solid #334155' }}>
+            <h3 style={{ margin: '0 0 20px 0', color: '#fff' }}>إضافة طالب جديد</h3>
+            <form onSubmit={handleAddStudent} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <input type="text" placeholder="كود الطالب" required value={newStudent.id} onChange={e => setNewStudent({...newStudent, id: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff' }} />
+              <input type="text" placeholder="اسم الطالب" required value={newStudent.name} onChange={e => setNewStudent({...newStudent, name: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff' }} />
+              <input type="text" placeholder="رقم ولي الأمر" required value={newStudent.parentPhone} onChange={e => setNewStudent({...newStudent, parentPhone: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff' }} />
+              <select value={newStudent.level} onChange={e => setNewStudent({...newStudent, level: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff' }}>
+                <option>المستوى الأول</option>
+                <option>المستوى الثاني</option>
+                <option>المستوى الثالث</option>
+              </select>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input type="number" placeholder="المدفوع" value={newStudent.paid} onChange={e => setNewStudent({...newStudent, paid: e.target.value})} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff' }} />
+                <input type="number" placeholder="المتبقي" value={newStudent.remaining} onChange={e => setNewStudent({...newStudent, remaining: e.target.value})} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff' }} />
+              </div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+                <button type="submit" style={{ flex: 1, backgroundColor: '#6366f1', color: '#fff', border: 'none', padding: '10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>حفظ</button>
+                <button type="button" onClick={() => setShowAddStudentModal(false)} style={{ flex: 1, backgroundColor: '#334155', color: '#94a3b8', border: 'none', padding: '10px', borderRadius: '8px', cursor: 'pointer' }}>إلغاء</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Transaction */}
+      {showTransactionModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#1e293b', padding: '28px', borderRadius: '20px', width: '380px', border: '1px solid #334155' }}>
+            <h3 style={{ margin: '0 0 20px 0', color: '#fff' }}>إضافة حركة مالية</h3>
+            <form onSubmit={handleAddTransaction} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <select value={newTransaction.type} onChange={e => setNewTransaction({...newTransaction, type: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff' }}>
+                <option value="expense">مصروف (-)</option>
+                <option value="income">إيراد (+)</option>
+              </select>
+              <input type="text" placeholder="البيان" required value={newTransaction.title} onChange={e => setNewTransaction({...newTransaction, title: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff' }} />
+              <input type="number" placeholder="المبلغ" required value={newTransaction.amount} onChange={e => setNewTransaction({...newTransaction, amount: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff' }} />
+              <input type="date" value={newTransaction.date} onChange={e => setNewTransaction({...newTransaction, date: e.target.value})} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#0f172a', color: '#fff' }} />
+              <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+                <button type="submit" style={{ flex: 1, backgroundColor: '#10b981', color: '#fff', border: 'none', padding: '10px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>تسجيل</button>
+                <button type="button" onClick={() => setShowTransactionModal(false)} style={{ flex: 1, backgroundColor: '#334155', color: '#94a3b8', border: 'none', padding: '10px', borderRadius: '8px', cursor: 'pointer' }}>إلغاء</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+    </div>
+  )
+}
+
+export default App
