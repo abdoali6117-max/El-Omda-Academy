@@ -148,11 +148,19 @@ function App() {
       {/* 1. Top Horizontal Navigation Bar */}
       <header style={{ backgroundColor: '#1e293b', borderBottom: '1px solid #334155', padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', position: 'sticky', top: 0, zIndex: 100 }}>
         
+        {/* اللوجو واسم الأكاديمية ورقم التواصل المحدث */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>⚡</div>
+          <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: '900', color: '#ffffff', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)' }}>
+            A
+          </div>
           <div>
             <h2 style={{ margin: 0, fontSize: '16px', color: '#fff', fontWeight: 'bold' }}>أكاديمية العمدة</h2>
-            <span style={{ fontSize: '10px', color: '#818cf8', fontWeight: '600' }}>v2.0 (250 طالب)</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+              <span style={{ fontSize: '10px', color: '#818cf8', fontWeight: '600' }}>v2.0</span>
+              <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold', backgroundColor: '#064e3b', padding: '2px 8px', borderRadius: '6px' }}>
+                📞 للتواصل: 01220389881
+              </span>
+            </div>
           </div>
         </div>
 
