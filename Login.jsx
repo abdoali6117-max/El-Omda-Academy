@@ -28,7 +28,7 @@ function Login() {
       minHeight: '100vh',
       direction: 'rtl',
       fontFamily: 'system-ui, -apple-system, sans-serif',
-      backgroundColor: '#0f172a',
+      backgroundColor: '#0a0f1d',
       color: '#f8fafc',
       display: 'flex',
       alignItems: 'center',
@@ -38,51 +38,63 @@ function Login() {
       padding: '20px'
     }}>
 
-      {/* خلفية العلامة المائية الشفافة (صورة البوستر) */}
+      {/* خلفية العلامة المائية الشفافة باستخدام صورة البوستر المرفوعة */}
       <div style={{
         position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundImage: `url('https://raw.githubusercontent.com/abdoali6117-max/El-Omda-Academy/main/public/poster.jpeg')`, // سيتم استخدام البوستر كخلفية مائية
+        backgroundImage: `url('/poster.jpg')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        opacity: 0.12, // درجة شفافية العلامة المائية
-        filter: 'blur(3px)',
+        opacity: 0.18,
+        filter: 'blur(2px)',
         zIndex: 1,
         pointerEvents: 'none'
       }} />
 
-      {/* كارت تسجيل الدخول Modern Card */}
+      {/* طبقة تدرج لوني لزيادة التباين */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'radial-gradient(circle at center, rgba(15, 23, 42, 0.75) 0%, rgba(10, 15, 29, 0.95) 100%)',
+        zIndex: 2,
+        pointerEvents: 'none'
+      }} />
+
+      {/* كارت تسجيل الدخول Modern Glass Card */}
       <div style={{
         position: 'relative',
-        zIndex: 2,
+        zIndex: 3,
         backgroundColor: 'rgba(30, 41, 59, 0.85)',
         backdropFilter: 'blur(16px)',
         padding: '40px 32px',
         borderRadius: '24px',
         width: '100%',
         maxWidth: '420px',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)'
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)'
       }}>
 
-        {/* رأس الصفحة والشعار */}
+        {/* رأس الصفحة والشعار المميز A */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{
-            width: '60px',
-            height: '60px',
-            borderRadius: '18px',
+            width: '64px',
+            height: '64px',
+            borderRadius: '20px',
             backgroundColor: '#6366f1',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '32px',
+            fontSize: '34px',
             fontWeight: '900',
             color: '#ffffff',
             margin: '0 auto 16px auto',
-            boxShadow: '0 8px 20px rgba(99, 102, 241, 0.4)'
+            boxShadow: '0 10px 25px rgba(99, 102, 241, 0.45)'
           }}>
             A
           </div>
@@ -91,7 +103,7 @@ function Login() {
             أكاديمية العمدة
           </h2>
           <p style={{ margin: 0, fontSize: '13px', color: '#818cf8', fontWeight: '600' }}>
-            نظام الإدارة المتكامل • تعليم الكمبيوتر للأطفال
+            تعليم الكمبيوتر للأطفال • بداية ذكية لمستقبل أفضل
           </p>
         </div>
 
@@ -119,7 +131,7 @@ function Login() {
             <input
               type="email"
               required
-              placeholder="example@gmail.com"
+              placeholder="andrewelomda@gmail.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               style={{
@@ -182,9 +194,10 @@ function Login() {
           </button>
         </form>
 
-        {/* رقم التواصل في الأسفل */}
+        {/* معلومات التواصل والمقر */}
         <div style={{ marginTop: '28px', textAlign: 'center', fontSize: '12px', color: '#94a3b8', borderTop: '1px solid #334155', paddingTop: '16px' }}>
-          📞 للتواصل والدعم الفني: <span style={{ color: '#34d399', fontWeight: 'bold' }}>01220389881</span>
+          📍 المراغة - سوهاج <br />
+          📞 للتواصل: <span style={{ color: '#34d399', fontWeight: 'bold' }}>01220389881</span>
         </div>
 
       </div>
